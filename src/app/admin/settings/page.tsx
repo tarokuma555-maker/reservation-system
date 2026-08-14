@@ -230,7 +230,11 @@ export default async function SettingsPage() {
           </div>
         </Card>
 
-        <div className="sticky bottom-4 flex justify-end">
+        {/* 画面のどこにいても押せるように下に貼りつくが、入力欄に重ならないよう帯にする */}
+        <div className="sticky bottom-0 -mx-1 flex items-center justify-end gap-4 border-t border-slate-200/80 bg-ground/95 px-1 py-3 backdrop-blur">
+          <p className="text-2xs text-slate-500">
+            変えたところは、保存を押すまで反映されません
+          </p>
           <button className="inline-flex items-center gap-2 rounded-pill bg-brand-600 px-7 py-3 text-sm font-bold text-white shadow-lift transition hover:bg-brand-700">
             <Icon name="check" className="h-4 w-4" />
             この内容で保存する
@@ -245,7 +249,14 @@ export default async function SettingsPage() {
           {s.cancelPolicy.map((p) => (
             <li key={p.hoursBefore} className="flex items-center justify-between gap-3 py-2.5">
               <span className="text-sm text-slate-700">
-                {p.hoursBefore === 0 ? "当日〜24時間前" : `${p.hoursBefore}時間より前`}
+                {p.hoursBefore === 0
+                  ? "当日"
+                  : p.hoursBefore <= 24
+                    ? "前日"
+                    : `${Math.round(p.hoursBefore / 24)}日前まで`}
+                <span className="ml-2 text-2xs text-slate-400">
+                  {p.hoursBefore === 0 ? "" : `（${p.hoursBefore}時間より前）`}
+                </span>
               </span>
               <span className="flex items-center gap-3 text-sm">
                 <span className="font-bold tabular-nums">

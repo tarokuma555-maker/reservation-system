@@ -94,14 +94,15 @@ async function main() {
   await adminShot("10-admin-calendar");
 
   await admin.goto(`${BASE}/admin/recurring`, { waitUntil: "networkidle" });
-  await admin.getByRole("link", { name: /様 —/ }).first().click();
+  await admin.getByRole("link", { name: /曜日の/ }).first().click();
+  await admin.waitForURL(/\/admin\/recurring\/.+/, { timeout: 15000 });
   await admin.waitForLoadState("networkidle");
   await adminShot("11-admin-recurring-detail");
 
   await admin.goto(`${BASE}/admin/invoices`, { waitUntil: "networkidle" });
   await adminShot("12-admin-invoices");
 
-  const pdfHref = await admin.getByRole("link", { name: "PDFを表示" }).first().getAttribute("href");
+  const pdfHref = await admin.getByRole("link", { name: "中身を見る" }).first().getAttribute("href");
   if (!pdfHref) throw new Error("発行済み書類が見つかりませんでした");
   await admin.goto(`${BASE}${pdfHref}`, { waitUntil: "networkidle" });
   await adminShot("13-admin-invoice-document");
@@ -117,7 +118,7 @@ async function main() {
   if (await deleteButton.count()) {
     await deleteButton.click();
     await admin.waitForLoadState("networkidle");
-    await admin.getByRole("button", { name: "不整合を検知して復元する" }).click();
+    await admin.getByRole("button", { name: "ずれていないか確かめて、直す" }).click();
     await admin.waitForLoadState("networkidle");
     await adminShot("16-admin-google-drift-repaired");
   }
@@ -125,7 +126,7 @@ async function main() {
   await admin.goto(`${BASE}/admin/expenses`, { waitUntil: "networkidle" });
   // レシートを読み取って登録するところまで実際に操作する
   await admin.getByRole("button", { name: "読み取る" }).click();
-  await admin.waitForSelector("text=読み取り結果を確認して登録する", { timeout: 15000 });
+  await admin.waitForSelector("text=読み取った内容を確かめる", { timeout: 15000 });
   await adminShot("17-admin-receipt-ocr");
 
   await admin.goto(`${BASE}/admin/documents`, { waitUntil: "networkidle" });

@@ -77,8 +77,12 @@ export default async function AccountingPage() {
           <StatTile label="出ていったお金（経費）" value={formatYen(expense)} />
           <StatTile
             label="のこり（もうけ）"
-            value={formatYen(profit)}
-            sub={profit < 0 ? "いまは経費のほうが多い状態です" : "ここに税金がかかります"}
+            value={profit < 0 ? `${formatYen(-profit)} の赤字` : formatYen(profit)}
+            sub={
+              profit < 0
+                ? "いまは経費のほうが多い状態です"
+                : "ここに税金がかかります。使わずに取っておきましょう"
+            }
             tone={profit < 0 ? "alert" : "plain"}
           />
         </div>
@@ -182,7 +186,7 @@ export default async function AccountingPage() {
         <details className="group rounded-card border border-slate-200/80 bg-surface shadow-card">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3.5 text-sm font-bold text-slate-700 transition hover:text-brand-700">
             <Icon name="chevronRight" className="h-4 w-4 transition group-open:rotate-90" />
-            科目ごとの残高を見る
+            なにに、いくら使ったかを見る
           </summary>
           <div className="scroll-x border-t border-slate-100">
             {tb.rows.length === 0 ? (

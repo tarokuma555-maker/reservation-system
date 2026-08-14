@@ -43,7 +43,7 @@ export default async function ReservationDetail({
         <div className="rounded-card border border-good-100 bg-good-50 p-5 text-sm text-good-700">
           <p className="font-bold">ご予約を承りました</p>
           <p className="mt-1 text-xs leading-relaxed">
-            確定のご連絡をLINEにお送りしました。前日{settings.reminderHour}時にリマインドをお送りします。
+            ご予約を承ったご連絡をLINEにお送りしました。前の日の{settings.reminderHour}時にも、あらためておしらせします。
           </p>
         </div>
       ) : null}

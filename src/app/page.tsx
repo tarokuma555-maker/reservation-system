@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/settings";
 import { lineMode } from "@/lib/line";
 import { googleMode } from "@/lib/google-calendar";
 import { ocrMode } from "@/lib/ocr";
+import { Icon } from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function Home() {
           <p className="mt-4 text-sm leading-relaxed text-slate-600">
             家事代行・片付けコンサル向けの予約システムです。
             お客様側のLINE画面と、オーナー側の管理画面の両方を、実際に触って動かせます。
-            予約から会計・決算書まで、すべて本物のロジックで動いています。
+            ご予約の受付から、領収書、経費、決算書の用意まで。見せかけではなく、ぜんぶ実際に動きます。
           </p>
         </header>
 
@@ -40,72 +41,72 @@ export default async function Home() {
             href="/liff"
             eyebrow="お客様側"
             title="LINEの画面"
-            body="リッチメニューから予約・変更・キャンセル・定期利用の申込みまで。届く通知もそのまま確認できます。"
+            body="LINEの下に出るメニューから、ご予約・変更・お取り消し・いつものご予約のお申し込みまで。お客様に届くお知らせも、そのままの見た目で確認できます。"
             accent
           />
           <EntryCard
             href="/admin"
             eyebrow="オーナー側"
             title="管理画面"
-            body="スケジュール管理、定期予約のイレギュラー対応、インボイス発行、経費とレシート・書類、帳簿と決算書。"
+            body="予定表、定期のお客様、領収書、レシートの読み取りと保管、そして決算書まで。今日やることが最初に出ます。"
           />
         </div>
 
         <section className="mt-14">
-          <h2 className="text-sm font-bold tracking-tight text-ink">このデモで見ていただきたい4つ</h2>
+          <h2 className="text-sm font-bold tracking-tight text-ink">とくに見ていただきたい4つ</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Point
               n="01"
-              title="提供形態で分岐する空き枠"
-              body="訪問とオンラインでは、必要な情報も移動時間も違います。前後の予約の組み合わせで必要な移動時間を計算し、埋まっている枠には理由を出します。"
+              title="うかがう日とオンラインの日を、うまく並べます"
+              body="おうちにうかがう日は移動の時間が要りますが、オンラインなら要りません。前後の予定の組み合わせを見て、間に合う時間だけをお客様に出します。埋まっている時間には理由も出ます。"
             />
             <Point
               n="02"
-              title="定期予約のイレギュラー対応"
-              body="「今回だけ休む」「今回だけ日時変更」をしても、あとからルールを変更した際にその回が消えません。"
+              title="定期のお客様の「今回だけ」に強い"
+              body="「今回だけお休み」「今回だけ時間をずらす」と決めたあとに、曜日そのものを変えても、せっかく調整した回は消えません。"
             />
             <Point
               n="03"
-              title="適格請求書とPDF"
-              body="法定6項目を検証し、税率ごとに1回だけ1円未満の扱いします。PDFは実際に生成され、レシート・書類として保存されます。"
+              title="領収書がボタン1つで出せます"
+              body="法律で決められた書き方になっているかを毎回たしかめます。消費税の1円未満も、税務署の求める順番で処理します。出した書類はそのまま7年ぶん保管されます。"
             />
             <Point
               n="04"
-              title="帳簿から決算書まで"
-              body="予約と経費が自動で仕訳になり、科目ごとの残高・計算書類4表・消費税集計まで積み上がります。"
+              title="決算前の「あの書類どこ？」がなくなる"
+              body="お仕事を「終わった」にする、レシートを撮る。このふたつだけで、税理士さんに渡す資料がひとりでにできあがります。"
             />
           </div>
         </section>
 
         <section className="mt-12 rounded-card border border-slate-200/80 bg-surface p-6 shadow-card">
-          <h2 className="text-sm font-bold tracking-tight text-ink">外部連携のいまの状態</h2>
+          <h2 className="text-sm font-bold tracking-tight text-ink">つながっているもの</h2>
           <p className="mt-1 text-xs leading-relaxed text-slate-600">
-            つなぎこみの設定が済むまでは「お試し」で動きます。送る中身は本番とまったく同じものを組み立てているため、
-            <b>いま見えている挙動がそのまま本番の挙動</b>です。
+            合いことばを入れるまでは「お試し」で動きます。お試し中でも送る中身は本番とまったく同じなので、
+            <b>いま見えているとおりに、本番でも動きます</b>。つなぎこみの作業はこちらで代行できます。
           </p>
           <ul className="mt-4 grid gap-2 sm:grid-cols-3">
-            <ModeChip label="LINE Messaging API" mode={lineMode()} />
+            <ModeChip label="LINE" mode={lineMode()} />
             <ModeChip label="Googleカレンダー" mode={googleMode()} />
             <ModeChip label="レシートの読み取り" mode={ocrMode()} />
           </ul>
         </section>
 
         <section className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-2xs text-slate-500">
-          <span>顧客 {customers}名</span>
+          <span>お客様 {customers}名</span>
           <span>メニュー {menus}件</span>
           <span>予約 {reservations}件</span>
-          <span>定期ルール {rules}本</span>
-          <span>発行済み書類 {invoices}件</span>
-          <span>仕訳 {entries}件</span>
+          <span>定期のお客様 {rules}組</span>
+          <span>出した領収書 {invoices}件</span>
+          <span>帳簿の記録 {entries}件</span>
         </section>
 
         <p className="mt-6 rounded-card border border-warn-100 bg-warn-50 px-4 py-3 text-xs leading-relaxed text-warn-700">
-          設定値はすべて仮置きです。事業者名「{settings.issuerName}」、登録番号「
-          {settings.registrationNumber}」、料金・営業時間・移動時間なども仮の値で、
+          いまの設定はぜんぶ仮の数字です。お店の名前「{settings.issuerName}」、登録番号「
+          {settings.registrationNumber}」、料金・お仕事の時間・移動にかかる時間なども仮のもので、
           <Link href="/admin/settings" className="mx-1 font-bold underline">
-            管理画面の設定
+            お店の設定
           </Link>
-          からその場で変更できます。
+          からその場で書きかえられます。
         </p>
       </div>
     </main>
@@ -145,8 +146,9 @@ function EntryCard({
       >
         {body}
       </p>
-      <p className="mt-4 text-xs font-bold">
-        開く <span className="inline-block transition group-hover:translate-x-1">→</span>
+      <p className="mt-4 inline-flex items-center gap-1 text-xs font-bold">
+        開く
+        <Icon name="arrowRight" className="h-3.5 w-3.5 transition group-hover:translate-x-1" />
       </p>
     </Link>
   );

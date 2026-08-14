@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getCurrentCustomer } from "@/lib/session";
 import { Empty } from "@/components/ui";
+import { Icon } from "@/components/Icon";
 import { formatYen } from "@/lib/time";
 import { parseBreakdown } from "@/lib/invoice";
 
@@ -10,8 +11,8 @@ export const dynamic = "force-dynamic";
 const TYPE_LABEL: Record<string, string> = {
   receipt: "領収書",
   invoice: "請求書",
-  returned: "適格返還請求書",
-  corrected: "修正インボイス",
+  returned: "返金の書類",
+  corrected: "書き直した書類",
 };
 
 export default async function CustomerInvoicesPage() {
@@ -27,14 +28,14 @@ export default async function CustomerInvoicesPage() {
   return (
     <div className="space-y-4 p-4">
       <div>
-        <h1 className="text-lg font-bold tracking-tight text-ink">領収書・請求書</h1>
+        <h1 className="text-lg font-bold tracking-tight text-ink">領収書</h1>
         <p className="mt-1 text-xs text-slate-600">
-          発行した書類はこちらからいつでもご確認いただけます。紛失時の再発行のご連絡は不要です。
+          これまでの領収書は、いつでもここからご覧いただけます。なくされた場合も、再発行のご連絡は要りません。
         </p>
       </div>
 
       {invoices.length === 0 ? (
-        <Empty>発行済みの書類はまだありません</Empty>
+        <Empty>まだ領収書はありません</Empty>
       ) : (
         <div className="space-y-3">
           {invoices.map((inv) => {
@@ -45,7 +46,7 @@ export default async function CustomerInvoicesPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-xs text-slate-500">
-                      {TYPE_LABEL[inv.type] ?? inv.type} ・ {inv.invoiceNumber}
+                      {TYPE_LABEL[inv.type] ?? inv.type}
                     </p>
                     <p className="mt-0.5 font-bold text-ink">{formatYen(inv.totalAmount)}</p>
                   </div>
@@ -64,17 +65,19 @@ export default async function CustomerInvoicesPage() {
                 <div className="mt-2 border-t border-slate-100 pt-2 text-2xs text-slate-500">
                   {Object.keys(tax).map((rate) => (
                     <p key={rate}>
-                      {rate}%対象 {formatYen(sub[rate] ?? 0)} ／ 消費税 {formatYen(tax[rate] ?? 0)}
+                      {rate}%のぶん {formatYen(sub[rate] ?? 0)}（うち消費税 {formatYen(tax[rate] ?? 0)}）
                     </p>
                   ))}
                   <p className="mt-1">登録番号 {inv.registrationNumber}</p>
+                  <p>番号 {inv.invoiceNumber}</p>
                 </div>
 
                 <Link
                   href={`/admin/invoices/${inv.id}`}
-                  className="mt-3 block rounded-lg border border-slate-300 py-2 text-center text-xs text-slate-700"
+                  className="mt-3 flex items-center justify-center gap-1.5 rounded-pill border border-slate-200 bg-surface py-2.5 text-center text-xs font-bold text-brand-700 transition hover:border-brand-300"
                 >
-                  PDFを表示する
+                  <Icon name="search" className="h-3.5 w-3.5" />
+                  領収書を開く
                 </Link>
               </div>
             );

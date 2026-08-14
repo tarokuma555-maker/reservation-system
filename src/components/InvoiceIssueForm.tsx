@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { issueInvoiceAction, type InvoiceActionState } from "@/app/actions";
+import { Icon } from "@/components/Icon";
 
 type Candidate = {
   id: string;
@@ -25,7 +26,7 @@ export default function InvoiceIssueForm({
   if (withCandidates.length === 0) {
     return (
       <p className="text-sm text-slate-500">
-        未発行の実施済み予約はありません。予約を「実施済み」にすると、ここに表示されます。
+        いま出すものはありません。予定表でお仕事を「終わった」にすると、ここに出てきます。
       </p>
     );
   }
@@ -34,12 +35,18 @@ export default function InvoiceIssueForm({
     <div className="space-y-4">
       {state.ok ? (
         <p className="rounded-xl border border-good-100 bg-good-50 px-3.5 py-2.5 text-sm font-medium text-good-700">
-          {state.ok}
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="check" className="h-4 w-4" />
+            {state.ok}
+          </span>
         </p>
       ) : null}
       {state.error ? (
-        <div className="rounded-lg border border-bad-100 bg-bad-50 px-3 py-2 text-sm text-bad-700">
-          <p className="font-bold">{state.error}</p>
+        <div className="rounded-card border border-bad-100 bg-bad-50 px-4 py-3 text-sm text-bad-700">
+          <p className="inline-flex items-center gap-1.5 font-bold">
+            <Icon name="alert" className="h-4 w-4" />
+            {state.error}
+          </p>
           {state.errors?.length ? (
             <ul className="mt-1 list-disc pl-5 text-xs">
               {state.errors.map((e) => (
@@ -77,18 +84,18 @@ export default function InvoiceIssueForm({
               className="rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               defaultValue="receipt"
             >
-              <option value="receipt">領収書として発行</option>
-              <option value="invoice">請求書として発行</option>
+              <option value="receipt">領収書にする</option>
+              <option value="invoice">請求書にする</option>
             </select>
             <button
               type="submit"
               disabled={pending}
               className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 disabled:opacity-50"
             >
-              {pending ? "発行中…" : "発行してLINEに送る"}
+              {pending ? "つくっています…" : "つくってLINEでお送りする"}
             </button>
             <span className="text-xs text-slate-500">
-              複数選ぶと1通にまとまります（税率ごとに1回だけ1円未満の扱い）
+              いくつか選ぶと、1枚にまとめて出せます
             </span>
           </div>
         </form>

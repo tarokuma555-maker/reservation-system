@@ -66,7 +66,7 @@ export default async function AdminDashboard() {
     todos.push({
       icon: "calendarCheck",
       title: `本日のお仕事が ${remainingToday}件 のこっています`,
-      detail: "終わったら「実施済みにする」を押すと、領収書を出せるようになります",
+      detail: "終わったら「終わった」を押すと、お礼のLINEが届き、領収書も出せるようになります",
       href: "/admin/calendar",
       action: "予定表をひらく",
     });

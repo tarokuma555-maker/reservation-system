@@ -20,12 +20,12 @@ export function DeliveryBadge({ type, className = "" }: { type: string; classNam
 }
 
 const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
-  confirmed: { label: "確定", cls: "bg-brand-600 text-white" },
-  completed: { label: "実施済", cls: "bg-slate-200 text-slate-700" },
-  cancelled_by_customer: { label: "お客様キャンセル", cls: "bg-slate-100 text-slate-500" },
-  cancelled_by_owner: { label: "こちらでキャンセル", cls: "bg-slate-100 text-slate-500" },
-  skipped: { label: "お休み", cls: "bg-warn-100 text-warn-700" },
-  no_show: { label: "無断キャンセル", cls: "bg-bad-100 text-bad-700" },
+  confirmed: { label: "予定どおり", cls: "bg-brand-600 text-white" },
+  completed: { label: "終わりました", cls: "bg-slate-200 text-slate-700" },
+  cancelled_by_customer: { label: "お客様の都合で中止", cls: "bg-slate-100 text-slate-500" },
+  cancelled_by_owner: { label: "こちらの都合で中止", cls: "bg-slate-100 text-slate-500" },
+  skipped: { label: "今回はお休み", cls: "bg-warn-100 text-warn-700" },
+  no_show: { label: "ご連絡なくお休み", cls: "bg-bad-100 text-bad-700" },
 };
 
 export function StatusBadge({ status }: { status: string }) {
@@ -41,9 +41,9 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function PaymentBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    unpaid: { label: "未入金", cls: "bg-bad-50 text-bad-700 ring-bad-100" },
-    cash_received: { label: "現金受領", cls: "bg-good-50 text-good-700 ring-good-100" },
-    transfer_confirmed: { label: "振込確認済", cls: "bg-good-50 text-good-700 ring-good-100" },
+    unpaid: { label: "お支払いまち", cls: "bg-bad-50 text-bad-700 ring-bad-100" },
+    cash_received: { label: "現金でいただきました", cls: "bg-good-50 text-good-700 ring-good-100" },
+    transfer_confirmed: { label: "お振込みずみ", cls: "bg-good-50 text-good-700 ring-good-100" },
   };
   const s = map[status] ?? map.unpaid;
   return (

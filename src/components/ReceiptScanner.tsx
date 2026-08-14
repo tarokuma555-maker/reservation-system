@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createExpenseAction, ocrReceiptAction, type OcrState } from "@/app/actions";
+import { Icon } from "@/components/Icon";
 
 type Account = { code: string; name: string };
 type Sample = { key: string; label: string };
@@ -23,16 +24,18 @@ export default function ReceiptScanner({
   return (
     <div className="space-y-4">
       <form action={formAction} className="space-y-3 rounded-card border border-slate-200/80 p-5">
-        <p className="text-sm font-bold text-ink">1. レシートを読み取る</p>
+        <Step n={1} title="レシートをえらぶ" />
 
         {mode === "mock" ? (
-          <label className="block text-xs text-slate-500">
-            サンプルのレシートを選ぶ（お試しモード）
+          <label className="block">
+            <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">
+              ためしに使うレシート
+            </span>
             <select
               name="sampleKey"
               value={sampleKey}
               onChange={(e) => setSampleKey(e.target.value)}
-              className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
+              className={inputCls}
             >
               {samples.map((s) => (
                 <option key={s.key} value={s.key}>
@@ -42,74 +45,98 @@ export default function ReceiptScanner({
             </select>
           </label>
         ) : (
-          <label className="block text-xs text-slate-500">
-            レシートの写真
+          <label className="block">
+            <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">
+              レシートの写真
+            </span>
             <input
               type="file"
               name="file"
               accept="image/*"
               capture="environment"
-              className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
+              className={inputCls}
             />
+            <span className="mt-1 block text-2xs text-slate-500">
+              まっすぐ、明るいところで撮ると読み取りやすくなります
+            </span>
           </label>
         )}
 
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 disabled:opacity-45"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 disabled:opacity-45"
         >
-          {pending ? "読み取り中…" : "読み取る"}
+          <Icon name="camera" className="h-4 w-4" />
+          {pending ? "読んでいます…" : "読み取る"}
         </button>
 
-        {state.error ? <p className="text-sm text-bad-600">{state.error}</p> : null}
+        {state.error ? (
+          <p className="flex items-start gap-1.5 text-sm text-bad-600">
+            <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0" />
+            {state.error}
+          </p>
+        ) : null}
       </form>
 
       {parsed ? (
         <form
           action={createExpenseAction}
-          className="space-y-3 rounded-xl border border-brand-200 bg-brand-50 p-4"
+          className="space-y-3 rounded-card border border-brand-200 bg-brand-50 p-5"
         >
-          <p className="text-sm font-bold text-ink">2. 読み取り結果を確認して登録する</p>
+          <Step n={2} title="読み取った内容を確かめる" />
+          <p className="text-xs leading-relaxed text-slate-600">
+            ちがっているところがあれば、そのまま書き直せます。
+          </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="取引年月日" name="expenseDate" type="date" defaultValue={parsed.transactionDate ?? ""} />
             <Field
-              label="金額（税込）"
+              label="いつ買ったか"
+              name="expenseDate"
+              type="date"
+              defaultValue={parsed.transactionDate ?? ""}
+            />
+            <Field
+              label="いくら（税こみ）"
               name="amount"
               type="number"
               defaultValue={String(parsed.totalAmount ?? "")}
             />
-            <Field label="取引先" name="vendorName" defaultValue={parsed.vendorName} />
-            <label className="block text-xs text-slate-600">
-              勘定科目（推定済み）
-              <select
-                name="accountCode"
-                defaultValue={parsed.suggestedAccountCode}
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
-              >
+            <Field label="どこのお店" name="vendorName" defaultValue={parsed.vendorName} />
+            <label className="block">
+              <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">
+                なんの費用にするか
+              </span>
+              <select name="accountCode" defaultValue={parsed.suggestedAccountCode} className={inputCls}>
                 {accounts.map((a) => (
                   <option key={a.code} value={a.code}>
-                    {a.code} {a.name}
+                    {a.name}
                   </option>
                 ))}
               </select>
+              <span className="mt-1 block text-2xs text-slate-500">
+                お店の名前から見当をつけてあります
+              </span>
             </label>
-            <label className="block text-xs text-slate-600">
-              消費税区分
+            <label className="block">
+              <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">
+                消費税
+              </span>
               <select
                 name="taxCategory"
                 defaultValue={parsed.taxRate === 8 ? "軽減8" : "課税10"}
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
+                className={inputCls}
               >
-                <option value="課税10">課税10%</option>
-                <option value="軽減8">軽減8%</option>
-                <option value="非課税">非課税</option>
-                <option value="不課税">不課税</option>
+                <option value="課税10">10%（ふつうの買い物）</option>
+                <option value="軽減8">8%（食べもの・飲みもの）</option>
+                <option value="非課税">かからないもの</option>
+                <option value="不課税">対象外（お祝い金など）</option>
               </select>
             </label>
-            <label className="block text-xs text-slate-600">
-              インボイスの区分
+            <label className="block">
+              <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">
+                消費税を差し引けるか
+              </span>
               <select
                 name="invoiceStatus"
                 defaultValue={
@@ -119,11 +146,11 @@ export default function ReceiptScanner({
                       ? "small_amount_exception"
                       : "non_qualified"
                 }
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
+                className={inputCls}
               >
-                <option value="qualified">適格請求書あり（全額控除）</option>
-                <option value="non_qualified">適格請求書なし（経過措置）</option>
-                <option value="small_amount_exception">少額特例（税込1万円未満）</option>
+                <option value="qualified">まるごと差し引ける（登録番号あり）</option>
+                <option value="non_qualified">一部だけ差し引ける（登録番号なし）</option>
+                <option value="small_amount_exception">少額なので差し引ける（1万円未満）</option>
               </select>
             </label>
           </div>
@@ -135,43 +162,71 @@ export default function ReceiptScanner({
           />
           <input type="hidden" name="ocrRawText" value={parsed.rawText} />
 
-          <div className="rounded-lg bg-surface p-3 text-xs leading-relaxed text-slate-600">
-            <p>
-              <b>登録番号</b>:{" "}
+          <div className="flex gap-2.5 rounded-xl bg-surface p-3.5">
+            <Icon
+              name={parsed.registrationNumber ? "check" : "info"}
+              className={`mt-0.5 h-4 w-4 shrink-0 ${
+                parsed.registrationNumber ? "text-good-600" : "text-ocean-600"
+              }`}
+            />
+            <p className="text-xs leading-relaxed text-slate-600">
               {parsed.registrationNumber ? (
-                <span className="text-brand-700">{parsed.registrationNumber}（適格請求書）</span>
+                <>
+                  お店の登録番号が読み取れました（{parsed.registrationNumber}）。
+                  このレシートは、消費税をまるごと差し引けます。
+                </>
               ) : (
-                <span className="text-ocean-600">
-                  読み取れませんでした
+                <>
+                  お店の登録番号が見つかりませんでした。
                   {parsed.smallAmountException
-                    ? " — 税込1万円未満のため少額特例の対象になり得ます"
-                    : " — 経過措置の割合でのみ控除できます"}
-                </span>
+                    ? "ただし1万円未満のお買い物なので、差し引ける決まりになっています。"
+                    : "この場合、消費税は決められた割合ぶんだけ差し引けます。"}
+                </>
               )}
             </p>
           </div>
 
-          <details>
-            <summary className="cursor-pointer text-xs text-slate-500">読み取った文字列を見る</summary>
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-2xs text-slate-500 transition hover:text-slate-700">
+              <Icon name="chevronRight" className="h-3 w-3 transition group-open:rotate-90" />
+              レシートから読み取った文字を見る
+            </summary>
             <pre className="mt-1 max-h-48 overflow-auto rounded-xl bg-slate-900 p-3.5 text-[10px] leading-relaxed text-brand-100">
               {parsed.rawText}
             </pre>
           </details>
 
-          <label className="block text-xs text-slate-600">
-            メモ
-            <input
-              name="note"
-              className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-            />
+          <label className="block">
+            <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">
+              メモ（なくても大丈夫です）
+            </span>
+            <input name="note" placeholder="お客様宅で使う洗剤 など" className={inputCls} />
           </label>
 
-          <button className="w-full rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
-            経費として登録し、帳簿に記録する
+          <button className="inline-flex w-full items-center justify-center gap-1.5 rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
+            <Icon name="check" className="h-4 w-4" />
+            経費として入れる
           </button>
+          <p className="text-2xs leading-relaxed text-slate-500">
+            押すと、帳簿への記録と、レシートの7年間の保管まで、まとめて済みます。
+          </p>
         </form>
       ) : null}
     </div>
+  );
+}
+
+const inputCls =
+  "block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm placeholder:text-slate-400";
+
+function Step({ n, title }: { n: number; title: string }) {
+  return (
+    <p className="flex items-center gap-2 text-sm font-bold text-ink">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-2xs text-white">
+        {n}
+      </span>
+      {title}
+    </p>
   );
 }
 
@@ -187,14 +242,9 @@ function Field({
   type?: string;
 }) {
   return (
-    <label className="block text-xs text-slate-600">
-      {label}
-      <input
-        name={name}
-        type={type}
-        defaultValue={defaultValue}
-        className="mt-1 block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
-      />
+    <label className="block">
+      <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">{label}</span>
+      <input name={name} type={type} defaultValue={defaultValue} className={inputCls} />
     </label>
   );
 }

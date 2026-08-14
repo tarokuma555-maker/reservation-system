@@ -222,21 +222,21 @@ export default async function StatementsPage() {
             <div>
               <p className="font-bold">1. 重要な会計方針</p>
               <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs">
-                <li>固定資産の減価償却の方法: 定額法（取得初年度は月割計算）</li>
-                <li>収益の計上基準: サービスの提供が完了した日をもって計上（発生主義）</li>
-                <li>消費税等の会計処理: 税抜方式</li>
+                <li>高額な道具の目減りの数え方: 毎年おなじ額ずつ（買った年は月割り）</li>
+                <li>売上を数えるタイミング: お仕事が終わった日（お金をいただいた日ではありません）</li>
+                <li>消費税の扱い: 売上と消費税を分けて記録しています</li>
               </ul>
             </div>
             <div>
               <p className="font-bold">2. 貸借対照表に関する注記</p>
               <p className="mt-1 text-xs">
-                減価償却累計額は資産から直接控除せず、控除科目として表示しています。
+                道具の目減りぶんは、道具の値段から直接引かず、別の行として書いています。
               </p>
             </div>
             <div>
               <p className="font-bold">3. 損益計算書に関する注記</p>
               <p className="mt-1 text-xs">
-                売上高は提供形態（訪問・オンライン）およびサービス種別ごとに区分して管理しています。
+                売上は、おうかがいする形とオンライン、そしてメニューの種類ごとに分けて記録しています。
               </p>
             </div>
             <p className="text-2xs text-slate-500">

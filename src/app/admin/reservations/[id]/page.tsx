@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { Card, DeliveryBadge, PaymentBadge, SectionTitle, StatusBadge } from "@/components/ui";
+import {
+  Button,
+  Card,
+  DeliveryBadge,
+  PaymentBadge,
+  SectionTitle,
+  StatusBadge,
+  inputClass,
+} from "@/components/ui";
+import { Icon, type IconName } from "@/components/Icon";
 import {
   cancelReservation,
   completeReservation,
@@ -33,7 +42,7 @@ export default async function AdminReservationDetail({
   });
   if (!reservation) notFound();
 
-  // 訪問とオンラインを切り替えるための候補メニュー（いまと逆の形態）
+  // うかがう／オンラインを入れかえるための、いまと逆のメニュー
   const alternativeMenus = await prisma.menu.findMany({
     where: {
       isPublished: true,
@@ -47,68 +56,93 @@ export default async function AdminReservationDetail({
   const dateLabels = dates.map((d, i) => (i === 0 ? "今日" : i === 1 ? "明日" : formatDateJa(d)));
 
   const isOpen = reservation.status === "confirmed";
+  const visit = reservation.deliveryType === "visit";
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tighter text-ink">
-            {reservation.customer.name} 様
-            {reservation.customer.companyName ? `（${reservation.customer.companyName}）` : ""}
-          </h1>
-          <p className="text-sm text-slate-500">{formatRange(reservation.startAt, reservation.endAt)}</p>
-        </div>
-        <div className="flex gap-2">
-          <DeliveryBadge type={reservation.deliveryType} />
-          <StatusBadge status={reservation.status} />
-          <PaymentBadge status={reservation.paymentStatus} />
+      <header>
+        <Link
+          href="/admin/calendar"
+          className="inline-flex items-center gap-1 text-2xs font-bold text-slate-400 transition hover:text-brand-600"
+        >
+          <Icon name="arrowLeft" className="h-3 w-3" />
+          予定表へ戻る
+        </Link>
+        <div className="mt-1.5 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tighter text-ink">
+              {reservation.customer.name} 様
+              {reservation.customer.companyName ? `（${reservation.customer.companyName}）` : ""}
+            </h1>
+            <p className="mt-0.5 text-sm text-slate-500">
+              {formatRange(reservation.startAt, reservation.endAt)}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <DeliveryBadge type={reservation.deliveryType} />
+            <StatusBadge status={reservation.status} />
+            <PaymentBadge status={reservation.paymentStatus} />
+          </div>
         </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
           <Card>
-            <SectionTitle>予約内容</SectionTitle>
-            <dl className="space-y-1.5 text-sm">
-              <Row label="メニュー" value={reservation.menu.name} />
+            <SectionTitle>ご予約の中身</SectionTitle>
+            <dl className="space-y-2 text-sm">
+              <Row icon="list" label="メニュー" value={reservation.menu.name} />
               {reservation.options.length ? (
-                <Row label="オプション" value={reservation.options.map((o) => o.name).join("・")} />
+                <Row
+                  icon="plus"
+                  label="追加のご依頼"
+                  value={reservation.options.map((o) => o.name).join("・")}
+                />
               ) : null}
-              <Row label="所要時間" value={`${reservation.totalMinutes}分`} />
-              <Row label="金額" value={`${formatYen(reservation.totalPrice)}（税込）`} />
+              <Row icon="clock" label="かかる時間" value={`${reservation.totalMinutes}分`} />
               <Row
-                label={reservation.deliveryType === "visit" ? "訪問先" : "実施方法"}
-                value={
-                  reservation.deliveryType === "visit"
-                    ? (reservation.serviceAddress ?? "-")
-                    : "オンライン（Google Meet）"
-                }
+                icon="wallet"
+                label="いただく金額"
+                value={`${formatYen(reservation.totalPrice)}（税こみ）`}
               />
-              {reservation.meetingUrl ? <Row label="会議URL" value={reservation.meetingUrl} /> : null}
-              <Row label="電話" value={reservation.customer.phone} />
+              <Row
+                icon={visit ? "pin" : "online"}
+                label={visit ? "うかがう場所" : "やり方"}
+                value={visit ? (reservation.serviceAddress ?? "—") : "オンライン（ビデオ通話）"}
+              />
+              {reservation.meetingUrl ? (
+                <Row icon="link" label="ビデオ通話のURL" value={reservation.meetingUrl} />
+              ) : null}
+              <Row icon="phone" label="お電話" value={reservation.customer.phone} />
               {reservation.customerNote ? (
-                <Row label="お客様のご要望" value={reservation.customerNote} />
+                <Row icon="chat" label="お客様からのご要望" value={reservation.customerNote} />
               ) : null}
               {reservation.recurringRule ? (
                 <Row
-                  label="定期"
-                  value={`${reservation.recurringRule.menu.name}${reservation.isException ? "（この回は個別に変更済み）" : ""}`}
+                  icon="repeat"
+                  label="定期のお客様"
+                  value={`${reservation.recurringRule.menu.name}${
+                    reservation.isException ? "（この回だけ、個別に変えてあります）" : ""
+                  }`}
                 />
               ) : null}
             </dl>
             {reservation.recurringRule ? (
               <Link
                 href={`/admin/recurring/${reservation.recurringRuleId}`}
-                className="mt-3 inline-block text-xs text-brand-600 underline"
+                className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:underline"
               >
-                この定期ルールを開く →
+                定期のきまりを開く
+                <Icon name="arrowRight" className="h-3.5 w-3.5" />
               </Link>
             ) : null}
           </Card>
 
           {isOpen ? (
             <Card>
-              <SectionTitle hint="空き枠と移動時間を再判定します">日時を変更する</SectionTitle>
+              <SectionTitle hint="空いている時間と、前後の移動が間に合うかを見て、選べる時間だけ出します">
+                日にちや時間をずらす
+              </SectionTitle>
               <RescheduleForm
                 reservationId={reservation.id}
                 menuId={reservation.menuId}
@@ -123,83 +157,94 @@ export default async function AdminReservationDetail({
         <div className="space-y-6">
           {isOpen ? (
             <>
-              <Card>
-                <SectionTitle hint="料金と所要時間を再計算し、会議URLの発行・破棄も自動で行います">
-                  訪問とオンラインを切り替える
+              <Card className="border-brand-200 bg-brand-50/50">
+                <SectionTitle hint="お仕事が終わったら、まずここを押してください">
+                  終わったことにする
                 </SectionTitle>
-                <form action={switchDeliveryType} className="flex flex-wrap items-end gap-2">
-                  <input type="hidden" name="reservationId" value={reservation.id} />
-                  <select
-                    name="targetMenuId"
-                    className="min-w-[220px] flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-                  >
-                    {alternativeMenus.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.deliveryType === "visit" ? "訪問" : "オンライン"}／{m.name}（{formatYen(m.price)}）
-                      </option>
-                    ))}
-                  </select>
-                  <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
-                    {reservation.deliveryType === "visit" ? "オンラインに変更" : "訪問に変更"}
-                  </button>
-                </form>
-              </Card>
-
-              <Card>
-                <SectionTitle>実施の記録</SectionTitle>
                 <form action={completeReservation} className="flex flex-wrap items-end gap-2">
                   <input type="hidden" name="reservationId" value={reservation.id} />
-                  <select
-                    name="paymentStatus"
-                    className="rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-                  >
-                    <option value="cash_received">現金を受領した</option>
-                    <option value="transfer_confirmed">振込を確認した</option>
-                    <option value="unpaid">まだ入金なし</option>
+                  <select name="paymentStatus" className={`${inputClass} w-auto`}>
+                    <option value="cash_received">現金でいただいた</option>
+                    <option value="transfer_confirmed">お振込みを確認した</option>
+                    <option value="unpaid">まだいただいていない</option>
                   </select>
-                  <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
-                    実施済みにする
-                  </button>
+                  <Button type="submit">
+                    <Icon name="check" className="h-4 w-4" />
+                    終わった
+                  </Button>
                 </form>
-                <p className="mt-2 text-xs text-slate-500">
-                  実施済みにすると、請求書・領収書の発行対象になります。
+                <p className="mt-2.5 text-xs leading-relaxed text-slate-600">
+                  押すと、お礼のメッセージがLINEに届き、領収書も出せるようになります。
+                  売上としても自動で記録されます。
                 </p>
               </Card>
 
               <Card>
-                <SectionTitle>キャンセル・スキップ</SectionTitle>
+                <SectionTitle hint="金額とかかる時間を計算し直します。ビデオ通話のURLも自動で出したり消したりします">
+                  {visit ? "オンラインに変える" : "うかがう形に変える"}
+                </SectionTitle>
+                <form action={switchDeliveryType} className="flex flex-wrap items-end gap-2">
+                  <input type="hidden" name="reservationId" value={reservation.id} />
+                  <select name="targetMenuId" className={`${inputClass} min-w-[220px] flex-1`}>
+                    {alternativeMenus.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.deliveryType === "visit" ? "おうちにうかがう" : "オンライン"}／{m.name}（
+                        {formatYen(m.price)}）
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit" variant="secondary">
+                    <Icon name={visit ? "online" : "visit"} className="h-4 w-4" />
+                    {visit ? "オンラインにする" : "うかがう形にする"}
+                  </Button>
+                </form>
+              </Card>
+
+              <Card>
+                <SectionTitle hint="お客様にはLINEでお知らせが届きます">
+                  お休みにする・お取り消し
+                </SectionTitle>
+                {reservation.recurringRuleId ? (
+                  <form action={skipOccurrence} className="mb-4">
+                    <input type="hidden" name="reservationId" value={reservation.id} />
+                    <Button type="submit" variant="secondary">
+                      <Icon name="skip" className="h-4 w-4" />
+                      今回だけお休みにする
+                    </Button>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                      定期のきまりはそのまま続きます。次回からはいつもどおりです。
+                    </p>
+                  </form>
+                ) : null}
                 <form action={cancelReservation} className="flex flex-wrap items-end gap-2">
                   <input type="hidden" name="reservationId" value={reservation.id} />
                   <input type="hidden" name="by" value="owner" />
                   <input
                     name="reason"
-                    placeholder="理由"
-                    className="min-w-[160px] flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
+                    placeholder="どうしてお取り消しになるか"
+                    className={`${inputClass} min-w-[160px] flex-1`}
                   />
-                  <button className="rounded-pill border border-bad-100 bg-surface px-4 py-2.5 text-sm font-bold text-bad-600 transition hover:bg-bad-50">
-                    キャンセルする
-                  </button>
+                  <Button type="submit" variant="danger">
+                    <Icon name="close" className="h-4 w-4" />
+                    このご予約を取り消す
+                  </Button>
                 </form>
-                {reservation.recurringRuleId ? (
-                  <form action={skipOccurrence} className="mt-2">
-                    <input type="hidden" name="reservationId" value={reservation.id} />
-                    <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300">
-                      この回だけスキップ（ルールは継続）
-                    </button>
-                  </form>
-                ) : null}
               </Card>
             </>
           ) : null}
 
           {reservation.invoiceLines.length > 0 ? (
             <Card>
-              <SectionTitle>発行済みの書類</SectionTitle>
-              <ul className="space-y-1 text-sm">
+              <SectionTitle>このお仕事で出した書類</SectionTitle>
+              <ul className="space-y-1.5 text-sm">
                 {reservation.invoiceLines.map((l) => (
                   <li key={l.id}>
-                    <Link href={`/admin/invoices/${l.invoiceId}`} className="text-brand-600 underline">
-                      {l.invoice.invoiceNumber}（{l.invoice.issueDate}）
+                    <Link
+                      href={`/admin/invoices/${l.invoiceId}`}
+                      className="inline-flex items-center gap-1.5 font-medium text-brand-700 hover:underline"
+                    >
+                      <Icon name="receipt" className="h-4 w-4" />
+                      {l.invoice.issueDate} に出した領収書
                     </Link>
                   </li>
                 ))}
@@ -208,17 +253,17 @@ export default async function AdminReservationDetail({
           ) : null}
 
           <Card>
-            <SectionTitle>操作の履歴</SectionTitle>
+            <SectionTitle hint="だれが・いつ・何をしたかが残ります">これまでのやりとり</SectionTitle>
             {reservation.logs.length === 0 ? (
-              <p className="text-sm text-slate-500">履歴はまだありません</p>
+              <p className="text-sm text-slate-500">まだ何もありません</p>
             ) : (
-              <ul className="space-y-2 text-xs">
+              <ul className="space-y-2.5 text-xs">
                 {reservation.logs.map((log) => (
-                  <li key={log.id} className="border-l-2 border-slate-200 pl-3">
-                    <p className="font-medium text-slate-700">
+                  <li key={log.id} className="border-l-2 border-brand-200 pl-3">
+                    <p className="font-bold text-slate-700">
                       {log.action}
                       <span className="ml-2 font-normal text-slate-400">
-                        {log.actorName || log.actorType}
+                        {log.actorName || (log.actorType === "customer" ? "お客様" : "こちら")}
                       </span>
                     </p>
                     {log.detail ? <p className="text-slate-500">{log.detail}</p> : null}
@@ -236,10 +281,13 @@ export default async function AdminReservationDetail({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-slate-500">{label}</dt>
+      <dt className="inline-flex shrink-0 items-center gap-1.5 text-slate-500">
+        <Icon name={icon} className="h-3.5 w-3.5 text-slate-400" />
+        {label}
+      </dt>
       <dd className="break-all text-right font-medium text-slate-800">{value}</dd>
     </div>
   );

@@ -8,8 +8,30 @@ export const FREQUENCY_LABELS: Record<Frequency, string> = {
   weekly: "毎週",
   biweekly: "隔週",
   every4weeks: "4週ごと",
-  monthly_nth: "毎月第N曜日",
+  monthly_nth: "毎月",
 };
+
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+
+/**
+ * 定期のきまりを、そのまま読める一文にする。
+ *
+ * 「毎週」「第2」「土曜日」を画面ごとに組み立てていると、月1回のきまりで
+ * 「毎月第N曜日 第2土曜日」のような文になってしまう。組み立てはここ一箇所にまとめる。
+ */
+export function describeSchedule(rule: {
+  frequency: string;
+  dayOfWeek: number;
+  nthWeek?: number | null;
+  startTime: string;
+}): string {
+  const weekday = `${WEEKDAYS[rule.dayOfWeek] ?? "?"}曜日`;
+  const head =
+    rule.frequency === "monthly_nth"
+      ? `毎月 第${rule.nthWeek ?? 1}${weekday}`
+      : `${FREQUENCY_LABELS[rule.frequency as Frequency] ?? rule.frequency} ${weekday}`;
+  return `${head}の ${rule.startTime} から`;
+}
 
 /**
  * 定期ルールから、指定期間に該当する実施日（YYYY-MM-DD）を列挙する。

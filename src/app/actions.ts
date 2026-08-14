@@ -425,7 +425,7 @@ export async function issueInvoiceAction(
   const type = String(formData.get("type") ?? "receipt") as "invoice" | "receipt";
 
   if (reservationIds.length === 0) {
-    return { error: "対象の予約を選んでください" };
+    return { error: "どのお仕事の領収書を出すか、えらんでください" };
   }
 
   try {
@@ -436,9 +436,12 @@ export async function issueInvoiceAction(
     return { ok: `${invoice.invoiceNumber} を発行し、売上の仕訳を起こしました` };
   } catch (e) {
     if (e instanceof InvoiceValidationError) {
-      return { error: "適格請求書の記載事項が不足しているため発行できません", errors: e.errors };
+      return {
+      error: "法律で必要な項目が足りないため、まだ出せません。下の点をご確認ください。",
+      errors: e.errors,
+    };
     }
-    return { error: e instanceof Error ? e.message : "発行に失敗しました" };
+    return { error: e instanceof Error ? e.message : "うまく出せませんでした。もう一度お試しください。" };
   }
 }
 
@@ -656,7 +659,7 @@ export async function ocrReceiptAction(_prev: OcrState, formData: FormData): Pro
       },
     };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "読み取りに失敗しました" };
+    return { error: e instanceof Error ? e.message : "うまく読み取れませんでした。もう一度お試しください。" };
   }
 }
 

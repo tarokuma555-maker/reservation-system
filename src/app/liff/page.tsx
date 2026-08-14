@@ -60,13 +60,14 @@ export default async function LiffHome() {
 
               {next.deliveryType === "online" && next.meetingUrl ? (
                 <p className="mt-3 rounded-xl bg-white/15 px-3 py-2 text-2xs leading-relaxed">
-                  当日はこの画面から参加URLを開けます。開始15分前にもお送りします。
+                  当日はこの画面からビデオ通話に入れます。始まる15分前にも、LINEでお送りします。
                 </p>
               ) : null}
             </div>
 
-            <p className="border-t border-white/20 px-5 py-3 text-2xs font-bold">
-              詳細・変更・キャンセルはこちら →
+            <p className="flex items-center gap-1 border-t border-white/20 px-5 py-3 text-2xs font-bold">
+              くわしく見る・日にちを変える・お取り消し
+              <Icon name="arrowRight" className="h-3 w-3" />
             </p>
           </article>
         </Link>
@@ -96,7 +97,7 @@ export default async function LiffHome() {
           title="ご予約の確認"
           sub={doneCount > 0 ? `これまで${doneCount}回ご利用` : "変更・キャンセルもこちら"}
         />
-        <Tile href="/liff/invoices" icon="receipt" title="領収書" sub="発行済みの書類" />
+        <Tile href="/liff/invoices" icon="receipt" title="領収書" sub="これまでの領収書" />
       </div>
 
       <section className="rounded-card border border-slate-200/80 bg-surface p-5 shadow-card">
@@ -105,7 +106,7 @@ export default async function LiffHome() {
           {[
             { n: "1", t: "メニューを選ぶ", d: "訪問とオンラインから選べます" },
             { n: "2", t: "日時を選ぶ", d: "空いている時間だけが表示されます" },
-            { n: "3", t: "確定", d: "確定のご連絡と前日リマインドをお送りします" },
+            { n: "3", t: "おしまい", d: "承りましたのご連絡と、前の日のおしらせが届きます" },
           ].map((s) => (
             <li key={s.n} className="flex gap-3">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xs font-bold text-brand-700">
@@ -123,9 +124,9 @@ export default async function LiffHome() {
       <section className="rounded-card bg-slate-100/70 px-5 py-4">
         <h2 className="text-2xs font-bold tracking-wide text-slate-600">キャンセルについて</h2>
         <dl className="mt-2 space-y-1.5 text-xs">
-          <Row label="48時間前まで" value="無料" />
-          <Row label="24〜48時間前" value="50%" />
-          <Row label="24時間前以降" value="お問い合わせください" />
+          <Row label="2日前まで" value="無料" />
+          <Row label="前日" value="料金の50%" />
+          <Row label="当日" value="ご相談ください" />
         </dl>
       </section>
     </div>

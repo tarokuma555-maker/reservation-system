@@ -107,7 +107,7 @@ test("宛名が空なら発行できない", () => {
     breakdown: calculateTax(lines),
   });
   assert.equal(errors.length, 1);
-  assert.match(errors[0], /宛名/);
+  assert.match(errors[0], /お名前/);
 });
 
 test("返還インボイスは税込1万円未満なら交付義務が免除される", () => {

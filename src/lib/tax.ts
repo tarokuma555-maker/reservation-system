@@ -114,28 +114,28 @@ export function validateQualifiedInvoice(input: InvoiceValidationInput): string[
   const errors: string[] = [];
 
   if (!input.issuerName.trim()) {
-    errors.push("① 発行事業者の名称が設定されていません");
+    errors.push("お店の名前が入っていません（設定から入れてください）");
   }
   if (!/^T\d{13}$/.test(input.registrationNumber.trim())) {
-    errors.push("① 登録番号が「T + 数字13桁」の形式ではありません");
+    errors.push("登録番号が「T」＋数字13けたの形になっていません");
   }
   if (input.lines.length === 0) {
-    errors.push("③ 取引内容がありません（明細が空です）");
+    errors.push("何のお仕事だったかが入っていません");
   }
   if (input.lines.some((l) => !/^\d{4}-\d{2}-\d{2}$/.test(l.transactionDate))) {
-    errors.push("② 取引年月日が入っていない明細があります");
+    errors.push("日にちが入っていない行があります");
   }
   if (input.lines.some((l) => !l.description.trim())) {
-    errors.push("③ 取引内容が空の明細があります");
+    errors.push("内容が空の行があります");
   }
   if (Object.keys(input.breakdown.subtotalByTaxRate).length === 0) {
-    errors.push("④ 税率ごとの対価の額が算出されていません");
+    errors.push("税率ごとの金額が計算できていません");
   }
   if (Object.keys(input.breakdown.taxByTaxRate).length === 0) {
-    errors.push("⑤ 税率ごとの消費税額が算出されていません");
+    errors.push("税率ごとの消費税が計算できていません");
   }
   if (!input.recipientName.trim()) {
-    errors.push("⑥ 宛名（交付を受ける事業者の氏名または名称）が空です");
+    errors.push("お客様のお名前が入っていません");
   }
 
   return errors;

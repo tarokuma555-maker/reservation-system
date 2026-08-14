@@ -8,14 +8,14 @@ export const dynamic = "force-dynamic";
 
 const TYPE_LABEL: Record<string, string> = {
   welcome: "友だち追加のごあいさつ",
-  booking_confirmed: "予約確定のお知らせ",
-  rescheduled: "日時変更のお知らせ",
-  cancelled: "キャンセルのお知らせ",
-  skipped: "定期のお休み受付",
-  reminder: "前日リマインド",
-  online_soon: "オンライン開始前リマインド",
-  completed: "実施後のお礼",
-  invoice: "領収書・請求書の送付",
+  booking_confirmed: "ご予約を承りました",
+  rescheduled: "日時が変わりました",
+  cancelled: "お取り消しのお知らせ",
+  skipped: "今回のお休みを承りました",
+  reminder: "明日おうかがいします",
+  online_soon: "まもなく始まります",
+  completed: "ありがとうございました",
+  invoice: "領収書をお送りしました",
 };
 
 /** LINEのトーク画面。システムから送られた通知が並ぶ。 */
@@ -33,20 +33,20 @@ export default async function TalkPage() {
     <div className="min-h-[70vh] space-y-4 bg-brand-50 p-4">
       {lineMode() === "mock" ? (
         <p className="rounded-card border border-slate-200/80 bg-surface px-3.5 py-2.5 text-2xs leading-relaxed text-slate-600 shadow-card">
-          お試しモードで動いています。実際のLINEには送信していませんが、
-          <b>ここに出ている内容がそのままお客様に届きます</b>（同じJSONをMessaging APIへ送ります）。
+          いまは お試しモード です。実際のLINEには送っていませんが、
+          <b>ここに出ている見た目のまま、お客様のトーク画面に届きます</b>。
         </p>
       ) : null}
 
       {messages.length === 0 ? (
-        <Empty>まだメッセージはありません。予約をすると通知が届きます。</Empty>
+        <Empty>まだメッセージはありません。ご予約いただくと、ここにお知らせが届きます。</Empty>
       ) : (
         messages.map((m) => (
           <div key={m.id} className="space-y-1">
             <p className="px-1 text-[10px] font-bold text-slate-500">
               {TYPE_LABEL[m.type] ?? m.type} ・{" "}
               {m.createdAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
-              {m.status === "failed" ? " ・送信失敗" : ""}
+              {m.status === "failed" ? " ・届きませんでした" : ""}
             </p>
             <FlexPreview payload={m.payload} />
           </div>
