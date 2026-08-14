@@ -1,0 +1,240 @@
+// デモ用スキーマ。
+// 本番は PostgreSQL を想定しているが、デモは追加のインフラなしで動かせるよう SQLite を使う。
+// 金額はすべて「円単位の整数（税込）」で保持する。円未満の単位が存在しないため、
+// 浮動小数点数を一切使わずに消費税計算ができる（要件定義 付録C）。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Setting {
+  key       String   @id
+  value     String // JSON文字列
+  updatedAt DateTime @updatedAt
+}
+
+model Staff {
+  id             String        @id @default(cuid())
+  name           String
+  role           String        @default("owner") // owner | staff
+  canHandleOnline Boolean      @default(true)
+  baseAddress    String        @default("")
+  isActive       Boolean       @default(true)
+  reservations   Reservation[]
+  businessHours  BusinessHour[]
+  blockedSlots   BlockedSlot[]
+}
+
+model Customer {
+  id             String        @id @default(cuid())
+  lineUserId     String        @unique
+  name           String
+  nameKana       String        @default("")
+  phone          String        @default("")
+  email          String?
+  postalCode     String?
+  address        String?
+  buildingName   String?
+  layout         String? // 1LDK / 2LDK / 3LDK以上
+  hasPet         Boolean       @default(false)
+  keyHandover    String? // 在宅 / キーボックス / 預かり
+  companyName    String? // 法人顧客の場合
+  registrationNumber String? // 相手方のインボイス登録番号
+  invoiceDelivery String       @default("line") // line | email | print
+  note           String        @default("")
+  tags           String        @default("") // カンマ区切り
+  consentAt      DateTime?
+  createdAt      DateTime      @default(now())
+  reservations   Reservation[]
+  recurringRules RecurringRule[]
+  invoices       Invoice[]
+}
+
+model Menu {
+  id                String   @id @default(cuid())
+  category          String
+  name              String
+  deliveryType      String // visit | online
+  description       String   @default("")
+  durationMinutes   Int
+  price             Int // 税込価格（総額表示義務に合わせて税込で保持）
+  taxRate           Int      @default(10)
+  applyLayoutAdjust Boolean  @default(false)
+  isRecurringOnly   Boolean  @default(false)
+  isFirstTimeOnly   Boolean  @default(false)
+  sortOrder         Int      @default(0)
+  isPublished       Boolean  @default(true)
+  options           MenuOption[]
+  reservations      Reservation[]
+  recurringRules    RecurringRule[]
+}
+
+model MenuOption {
+  id                String  @id @default(cuid())
+  menuId            String?
+  menu              Menu?   @relation(fields: [menuId], references: [id])
+  name              String
+  additionalMinutes Int     @default(0)
+  additionalPrice   Int     @default(0)
+  sortOrder         Int     @default(0)
+  isPublished       Boolean @default(true)
+  reservationOptions ReservationOption[]
+}
+
+model Reservation {
+  id              String   @id @default(cuid())
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+  staffId         String
+  staff           Staff    @relation(fields: [staffId], references: [id])
+  menuId          String
+  menu            Menu     @relation(fields: [menuId], references: [id])
+  recurringRuleId String?
+  recurringRule   RecurringRule? @relation(fields: [recurringRuleId], references: [id])
+  occurrenceDate  String? // 定期の本来の実施日 YYYY-MM-DD
+  startAt         DateTime
+  endAt           DateTime
+  totalMinutes    Int
+  totalPrice      Int // 税込
+  status          String   @default("confirmed")
+  // confirmed | completed | cancelled_by_customer | cancelled_by_owner | skipped | no_show
+  deliveryType    String // visit | online
+  serviceAddress  String? // 訪問時の実施場所スナップショット
+  meetingUrl      String? // オンライン時の会議URL
+  source          String   @default("line") // line | admin | phone
+  isException     Boolean  @default(false)
+  paymentStatus   String   @default("unpaid") // unpaid | cash_received | transfer_confirmed
+  customerNote    String   @default("")
+  internalNote    String   @default("")
+  cancelledAt     DateTime?
+  cancelReason    String?
+  cancelFee       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  options         ReservationOption[]
+  logs            ReservationLog[]
+  invoiceLines    InvoiceLine[]
+
+  @@index([startAt])
+  @@index([recurringRuleId])
+}
+
+model ReservationOption {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  optionId      String
+  option        MenuOption  @relation(fields: [optionId], references: [id])
+  name          String
+  additionalMinutes Int
+  additionalPrice   Int
+}
+
+model RecurringRule {
+  id              String   @id @default(cuid())
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+  staffId         String
+  menuId          String
+  menu            Menu     @relation(fields: [menuId], references: [id])
+  frequency       String // weekly | biweekly | every4weeks | monthly_nth
+  dayOfWeek       Int // 0=日 .. 6=土
+  nthWeek         Int? // monthly_nth の第N週
+  startTime       String // "10:00"
+  durationMinutes Int
+  startDate       String // YYYY-MM-DD
+  endDate         String?
+  status          String   @default("active") // active | paused | ended
+  pausedFrom      String?
+  pausedTo        String?
+  generatedUntil  String? // YYYY-MM-DD
+  createdAt       DateTime @default(now())
+  reservations    Reservation[]
+}
+
+model BusinessHour {
+  id        String  @id @default(cuid())
+  staffId   String?
+  staff     Staff?  @relation(fields: [staffId], references: [id])
+  dayOfWeek Int
+  openTime  String // "09:00"
+  closeTime String // "18:00"
+  isClosed  Boolean @default(false)
+  // 提供形態別の受付時間帯（null なら全形態で受付）
+  deliveryType String?
+}
+
+model Holiday {
+  id      String @id @default(cuid())
+  date    String // YYYY-MM-DD
+  endDate String?
+  reason  String @default("")
+}
+
+model BlockedSlot {
+  id       String   @id @default(cuid())
+  staffId  String
+  staff    Staff    @relation(fields: [staffId], references: [id])
+  startAt  DateTime
+  endAt    DateTime
+  title    String   @default("")
+  source   String   @default("manual") // manual | google
+  googleEventId String?
+}
+
+model Invoice {
+  id                 String   @id @default(cuid())
+  invoiceNumber      String   @unique
+  type               String   @default("receipt") // invoice | receipt | returned | corrected
+  customerId         String
+  customer           Customer @relation(fields: [customerId], references: [id])
+  issueDate          String // YYYY-MM-DD
+  subtotalByTaxRate  String // JSON { "10": 16873 }  税抜
+  taxByTaxRate       String // JSON { "10": 1687 }
+  totalAmount        Int // 税込合計
+  registrationNumber String // 発行時点の自社登録番号スナップショット
+  issuerName         String // 発行時点の事業者名スナップショット
+  recipientName      String // 発行時点の宛名スナップショット
+  relatedInvoiceId   String?
+  status             String   @default("issued") // issued | sent | void
+  voidReason         String?
+  correctionReason   String?
+  sentAt             DateTime?
+  sentVia            String? // line | email | print
+  createdAt          DateTime @default(now())
+  lines              InvoiceLine[]
+
+  @@index([issueDate])
+  @@index([totalAmount])
+}
+
+model InvoiceLine {
+  id            String       @id @default(cuid())
+  invoiceId     String
+  invoice       Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  reservationId String?
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  transactionDate String // YYYY-MM-DD
+  description   String
+  quantity      Int          @default(1)
+  unitPrice     Int // 税込単価
+  amount        Int // 税込金額
+  taxRate       Int          @default(10)
+  isReducedTaxRate Boolean   @default(false)
+}
+
+model ReservationLog {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  actorType     String // customer | owner | system
+  actorName     String      @default("")
+  action        String
+  detail        String      @default("")
+  createdAt     DateTime    @default(now())
+}
