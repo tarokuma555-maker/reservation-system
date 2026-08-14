@@ -17,6 +17,12 @@ export type AppSettings = {
   simplifiedBusinessType: string; // 簡易課税の事業区分
   roundingMode: "floor" | "ceil" | "round"; // 消費税の端数処理
   invoiceNumberPrefix: string;
+  /** 簡易課税のみなし仕入率（第五種＝サービス業は50%） */
+  deemedPurchaseRate: number;
+  /** インボイスがない仕入れの控除割合（経過措置）。改正で変わるため設定値で持つ */
+  transitionalDeductionRate: number;
+  /** 少額特例（税込1万円未満は帳簿の保存のみで控除可）を使うか */
+  smallAmountExceptionEnabled: boolean;
 
   // 拠点（オンラインの実施場所であり、訪問との往復の基準点）
   baseAddress: string;
@@ -64,6 +70,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   simplifiedBusinessType: "第五種事業（サービス業）",
   roundingMode: "floor",
   invoiceNumberPrefix: "2026",
+  deemedPurchaseRate: 50,
+  transitionalDeductionRate: 80,
+  smallAmountExceptionEnabled: true,
 
   baseAddress: "東京都世田谷区○○1-2-3",
 

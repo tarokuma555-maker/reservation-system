@@ -8,6 +8,7 @@
  */
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
+import { resolveChromiumPath } from "../src/lib/browser";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3100";
 const OUT = "screenshots";
@@ -15,9 +16,8 @@ const OUT = "screenshots";
 async function main() {
   mkdirSync(OUT, { recursive: true });
 
-  const browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
-  });
+  const executablePath = resolveChromiumPath();
+  const browser = await chromium.launch(executablePath ? { executablePath } : {});
 
   const phone = await browser.newContext({ viewport: { width: 420, height: 900 } });
   const page = await phone.newPage();
@@ -73,8 +73,11 @@ async function main() {
   await page.goto(`${BASE}/liff/recurring`, { waitUntil: "networkidle" });
   await shot("06-liff-recurring");
 
+  await page.goto(`${BASE}/liff/talk`, { waitUntil: "networkidle" });
+  await shot("07-liff-talk");
+
   await page.goto(`${BASE}/liff/invoices`, { waitUntil: "networkidle" });
-  await shot("07-liff-invoices");
+  await shot("08-liff-invoices");
 
   // --- 管理側 ---
   const desktop = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -85,26 +88,60 @@ async function main() {
   };
 
   await admin.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
-  await adminShot("08-admin-dashboard");
+  await adminShot("09-admin-dashboard");
 
   await admin.goto(`${BASE}/admin/calendar`, { waitUntil: "networkidle" });
-  await adminShot("09-admin-calendar");
+  await adminShot("10-admin-calendar");
 
   await admin.goto(`${BASE}/admin/recurring`, { waitUntil: "networkidle" });
   await admin.getByRole("link", { name: /様 —/ }).first().click();
   await admin.waitForLoadState("networkidle");
-  await adminShot("10-admin-recurring-detail");
+  await adminShot("11-admin-recurring-detail");
 
   await admin.goto(`${BASE}/admin/invoices`, { waitUntil: "networkidle" });
-  await adminShot("11-admin-invoices");
+  await adminShot("12-admin-invoices");
 
   const pdfHref = await admin.getByRole("link", { name: "PDFを表示" }).first().getAttribute("href");
   if (!pdfHref) throw new Error("発行済み書類が見つかりませんでした");
   await admin.goto(`${BASE}${pdfHref}`, { waitUntil: "networkidle" });
-  await adminShot("12-admin-invoice-pdf");
+  await adminShot("13-admin-invoice-document");
+
+  await admin.goto(`${BASE}/admin/messages`, { waitUntil: "networkidle" });
+  await adminShot("14-admin-line");
+
+  await admin.goto(`${BASE}/admin/calendar-sync`, { waitUntil: "networkidle" });
+  await adminShot("15-admin-google-sync");
+
+  // 不整合の検知と復元を実際に動かす
+  const deleteButton = admin.getByRole("button", { name: "Google側で消してみる" }).first();
+  if (await deleteButton.count()) {
+    await deleteButton.click();
+    await admin.waitForLoadState("networkidle");
+    await admin.getByRole("button", { name: "不整合を検知して復元する" }).click();
+    await admin.waitForLoadState("networkidle");
+    await adminShot("16-admin-google-drift-repaired");
+  }
+
+  await admin.goto(`${BASE}/admin/expenses`, { waitUntil: "networkidle" });
+  // レシートを読み取って登録するところまで実際に操作する
+  await admin.getByRole("button", { name: "読み取る" }).click();
+  await admin.waitForSelector("text=読み取り結果を確認して登録する", { timeout: 15000 });
+  await adminShot("17-admin-receipt-ocr");
+
+  await admin.goto(`${BASE}/admin/documents`, { waitUntil: "networkidle" });
+  await adminShot("18-admin-documents");
+
+  await admin.goto(`${BASE}/admin/accounting`, { waitUntil: "networkidle" });
+  await adminShot("19-admin-ledger");
+
+  await admin.goto(`${BASE}/admin/accounting/statements`, { waitUntil: "networkidle" });
+  await adminShot("20-admin-financial-statements");
+
+  await admin.goto(`${BASE}/admin/accounting/tax`, { waitUntil: "networkidle" });
+  await adminShot("21-admin-consumption-tax");
 
   await admin.goto(`${BASE}/admin/settings`, { waitUntil: "networkidle" });
-  await adminShot("13-admin-settings");
+  await adminShot("22-admin-settings");
 
   await browser.close();
   console.log(`✓ 全${steps.length}画面の確認が完了しました`);

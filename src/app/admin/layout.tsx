@@ -10,6 +10,11 @@ const NAV = [
   { href: "/admin/customers", label: "顧客", icon: "👤" },
   { href: "/admin/menus", label: "メニュー", icon: "🧹" },
   { href: "/admin/invoices", label: "請求書・領収書", icon: "🧾" },
+  { href: "/admin/expenses", label: "経費・レシート", icon: "🧺" },
+  { href: "/admin/documents", label: "証憑ボックス", icon: "🗄️" },
+  { href: "/admin/accounting", label: "帳簿・決算書", icon: "📗" },
+  { href: "/admin/messages", label: "LINE連携", icon: "💬" },
+  { href: "/admin/calendar-sync", label: "Google同期", icon: "🔄" },
   { href: "/admin/settings", label: "設定", icon: "⚙️" },
 ];
 

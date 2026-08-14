@@ -61,11 +61,12 @@ function RichMenu() {
     { href: "/liff/menus", label: "予約する", icon: "📅" },
     { href: "/liff/reservations", label: "予約確認", icon: "✅" },
     { href: "/liff/recurring", label: "定期利用", icon: "🔁" },
+    { href: "/liff/talk", label: "トーク", icon: "💬" },
     { href: "/liff/invoices", label: "領収書", icon: "🧾" },
   ];
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-300 bg-white">
-      <div className="mx-auto grid max-w-md grid-cols-5">
+      <div className="mx-auto grid max-w-md grid-cols-6">
         {items.map((i) => (
           <Link
             key={i.href}

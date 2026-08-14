@@ -8,11 +8,34 @@ import { DEFAULT_SETTINGS } from "../src/lib/settings";
 import { addDays, addMinutes, jst, todayStr } from "../src/lib/time";
 import { generateOccurrences } from "../src/lib/recurring";
 import { issueInvoice } from "../src/lib/invoice";
+import {
+  ensureChartOfAccounts,
+  ensureFiscalYear,
+  journalizeExpense,
+  journalizeInvoice,
+  journalizePayment,
+  postOpeningBalances,
+} from "../src/lib/accounting";
+import { syncReservationToCalendar } from "../src/lib/google-calendar";
+import { notifyBookingConfirmed, notifyWelcome } from "../src/lib/notifications";
 
 const prisma = new PrismaClient();
 
 async function main() {
   // 既存データを消してから作り直す
+  await prisma.documentLog.deleteMany();
+  await prisma.expense.deleteMany();
+  await prisma.document.deleteMany();
+  await prisma.journalLine.deleteMany();
+  await prisma.journalEntry.deleteMany();
+  await prisma.fixedAsset.deleteMany();
+  await prisma.fiscalYear.deleteMany();
+  await prisma.account.deleteMany();
+  await prisma.outboundMessage.deleteMany();
+  await prisma.webhookEvent.deleteMany();
+  await prisma.richMenu.deleteMany();
+  await prisma.calendarSync.deleteMany();
+  await prisma.calendarEvent.deleteMany();
   await prisma.invoiceLine.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.reservationLog.deleteMany();
@@ -355,8 +378,141 @@ async function main() {
   const g1 = await generateOccurrences(rule1.id);
   const g2 = await generateOccurrences(rule2.id);
 
-  // 発行済みの請求書を1件作っておく
-  await issueInvoice({ customerId: c.sato.id, reservationIds: [done1.id], type: "receipt" });
+  /* ---------- リッチメニュー ---------- */
+  await prisma.richMenu.create({
+    data: {
+      name: "はじめての方向け",
+      target: "default",
+      chatBarText: "メニュー",
+      areas: JSON.stringify([
+        { label: "はじめての方へ", icon: "👋", path: "" },
+        { label: "料金・メニュー", icon: "📋", path: "/menus" },
+        { label: "予約する", icon: "📅", path: "/menus" },
+        { label: "定期利用", icon: "🔁", path: "/recurring/new" },
+        { label: "よくある質問", icon: "❓", path: "" },
+        { label: "お問い合わせ", icon: "💬", path: "" },
+      ]),
+    },
+  });
+  await prisma.richMenu.create({
+    data: {
+      name: "ご予約がある方向け",
+      target: "booked",
+      chatBarText: "予約メニュー",
+      areas: JSON.stringify([
+        { label: "次回の予約", icon: "✅", path: "/reservations" },
+        { label: "予約を変更", icon: "🔄", path: "/reservations" },
+        { label: "キャンセル", icon: "✖️", path: "/reservations" },
+        { label: "定期利用の管理", icon: "🔁", path: "/recurring" },
+        { label: "新しく予約", icon: "📅", path: "/menus" },
+        { label: "領収書", icon: "🧾", path: "/invoices" },
+      ]),
+    },
+  });
+
+  /* ---------- Googleカレンダーへ書き出し ---------- */
+  const toSync = await prisma.reservation.findMany({
+    where: { status: { in: ["confirmed", "completed"] } },
+    select: { id: true },
+  });
+  for (const r of toSync) await syncReservationToCalendar(r.id);
+
+  // Google側にだけある私用予定（取り込みのデモ用）
+  const personalStart = jst(addDays(today, 5), "13:00");
+  await prisma.calendarEvent.create({
+    data: {
+      googleEventId: "mock_personal_seed_1",
+      summary: "歯科（Googleカレンダーに直接入れた予定）",
+      startAt: personalStart,
+      endAt: addMinutes(personalStart, 90),
+      source: "personal",
+    },
+  });
+
+  /* ---------- LINE通知 ---------- */
+  await notifyWelcome(c.sato.id);
+  const upcoming = await prisma.reservation.findMany({
+    where: { status: "confirmed", startAt: { gte: new Date() } },
+    orderBy: { startAt: "asc" },
+    take: 3,
+  });
+  for (const r of upcoming) await notifyBookingConfirmed(r.id);
+
+  /* ---------- 会計 ---------- */
+  await ensureChartOfAccounts();
+  const fy = await ensureFiscalYear(today);
+
+  // 期首残高（導入時の移行を想定した仮の値）
+  await postOpeningBalances(fy.id, [
+    { accountCode: "1010", debit: 150_000 },
+    { accountCode: "1020", debit: 1_850_000 },
+    { accountCode: "1500", debit: 480_000 },
+    { accountCode: "1590", credit: 160_000 },
+    { accountCode: "3010", credit: 1_000_000 },
+    { accountCode: "3020", credit: 1_320_000 },
+  ]);
+
+  // 固定資産（減価償却のデモ用）
+  await prisma.fixedAsset.create({
+    data: {
+      name: "業務用スチームクリーナー",
+      acquisitionDate: addDays(today, -400),
+      acquisitionCost: 480_000,
+      accountCode: "1500",
+      usefulLife: 6,
+      accumulatedDepreciation: 160_000,
+    },
+  });
+
+  // 発行済みの請求書と、その売上・入金の仕訳
+  const inv = await issueInvoice({ customerId: c.sato.id, reservationIds: [done1.id], type: "receipt" });
+  await journalizeInvoice(inv.id);
+  await journalizePayment({
+    reservationId: done1.id,
+    date: addDays(today, -7),
+    amount: done1.totalPrice + options[0].additionalPrice,
+    method: "cash",
+    customerName: "佐藤 美咲",
+  });
+
+  // 経費をいくつか登録し、仕訳まで通す
+  const expenseSeed = [
+    { date: addDays(today, -20), account: "5110", amount: 2640, vendor: "カインズホーム 世田谷店", reg: "T1234567890999", status: "qualified" },
+    { date: addDays(today, -12), account: "5140", amount: 6255, vendor: "ENEOS 環七通り給油所", reg: "T2345678901234", status: "qualified" },
+    { date: addDays(today, -9), account: "5150", amount: 600, vendor: "パークタイム目黒第3", reg: null, status: "small_amount_exception" },
+    { date: addDays(today, -4), account: "5200", amount: 33000, vendor: "一般社団法人 整理収納協会", reg: "T3456789012345", status: "qualified" },
+    { date: addDays(today, -3), account: "5160", amount: 8800, vendor: "スマホ通信（個人事業者）", reg: null, status: "non_qualified" },
+  ];
+
+  for (const e of expenseSeed) {
+    const doc = await prisma.document.create({
+      data: {
+        kind: "received_receipt",
+        filePath: `storage/receipts/${e.date}-${e.vendor}.jpg`,
+        mimeType: "image/jpeg",
+        transactionDate: e.date,
+        transactionAmount: e.amount,
+        counterpartyName: e.vendor,
+        retentionUntil: addDays(e.date, 365 * 7),
+      },
+    });
+    await prisma.documentLog.create({
+      data: { documentId: doc.id, action: "create", detail: "レシートを撮影して登録" },
+    });
+    const expense = await prisma.expense.create({
+      data: {
+        expenseDate: e.date,
+        accountCode: e.account,
+        amount: e.amount,
+        taxCategory: "課税10",
+        vendorName: e.vendor,
+        vendorRegistrationNumber: e.reg,
+        invoiceStatus: e.status,
+        documentId: doc.id,
+      },
+    });
+    await journalizeExpense(expense.id);
+  }
 
   console.log("--- デモデータを作成しました ---");
   console.log(`スタッフ: ${owner.name}`);
@@ -364,6 +520,9 @@ async function main() {
   console.log(`顧客: 4名（うちオンラインのみ1名・法人1名）`);
   console.log(`定期ルール1（毎週火曜・訪問）: ${g1.created}件を生成`);
   console.log(`定期ルール2（毎月第2土曜・オンライン）: ${g2.created}件を生成`);
+  console.log(`カレンダーへ書き出し: ${toSync.length}件`);
+  console.log(`会計: 勘定科目 ${(await prisma.account.count())}件 / 仕訳 ${(await prisma.journalEntry.count())}件 / 証憑 ${(await prisma.document.count())}件`);
+  console.log(`LINE通知: ${(await prisma.outboundMessage.count())}件（モック送信）`);
   if (g1.conflicts.length || g2.conflicts.length) {
     console.log("要調整:", [...g1.conflicts, ...g2.conflicts].join(" / "));
   }

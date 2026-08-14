@@ -53,6 +53,7 @@ model Customer {
   reservations   Reservation[]
   recurringRules RecurringRule[]
   invoices       Invoice[]
+  messages       OutboundMessage[]
 }
 
 model Menu {
@@ -206,6 +207,7 @@ model Invoice {
   correctionReason   String?
   sentAt             DateTime?
   sentVia            String? // line | email | print
+  pdfPath            String?
   createdAt          DateTime @default(now())
   lines              InvoiceLine[]
 
@@ -237,4 +239,198 @@ model ReservationLog {
   action        String
   detail        String      @default("")
   createdAt     DateTime    @default(now())
+}
+
+/* ===================== 外部連携 ===================== */
+
+/// LINEへ送信したメッセージ。モックモードではここにだけ記録される。
+model OutboundMessage {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  reservationId String?
+  type          String // booking_confirmed / reminder / online_soon / cancelled / completed / invoice / broadcast など
+  channel       String   @default("line")
+  payload       String // 実際にMessaging APIへ送るJSON
+  status        String   @default("queued") // queued | sent | failed | mocked
+  errorMessage  String?
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([customerId])
+  @@index([createdAt])
+}
+
+/// LINEから受け取ったWebhookイベント。再送に備えてイベントIDで冪等にする。
+model WebhookEvent {
+  id         String   @id @default(cuid())
+  eventId    String   @unique
+  type       String
+  lineUserId String?
+  payload    String
+  processed  Boolean  @default(false)
+  note       String   @default("")
+  receivedAt DateTime @default(now())
+}
+
+/// リッチメニューの定義。未予約者向け／予約保有者向けを出し分ける。
+model RichMenu {
+  id            String  @id @default(cuid())
+  name          String
+  target        String // default | booked
+  chatBarText   String  @default("メニュー")
+  areas         String // JSON: [{label, icon, action}]
+  isPublished   Boolean @default(false)
+  lineRichMenuId String?
+  updatedAt     DateTime @updatedAt
+}
+
+/// Googleカレンダーのイベント。モックモードでは「Google側の状態」をこのテーブルで再現する。
+model CalendarEvent {
+  id                  String   @id @default(cuid())
+  calendarId          String   @default("primary")
+  googleEventId       String   @unique
+  summary             String
+  description         String   @default("")
+  location            String   @default("")
+  startAt             DateTime
+  endAt               DateTime
+  conferenceUrl       String?
+  privateReservationId String? // extendedProperties.private.reservationId
+  source              String   @default("system") // system = 本システムが作成 / personal = 手元で入れた私用予定
+  isDeleted           Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+
+  @@index([startAt])
+}
+
+/// 予約とGoogleカレンダーイベントの同期状態。失敗はキューに残してリトライする。
+model CalendarSync {
+  id            String   @id @default(cuid())
+  reservationId String   @unique
+  googleEventId String?
+  calendarId    String   @default("primary")
+  syncStatus    String   @default("pending") // pending | synced | failed | deleted
+  retryCount    Int      @default(0)
+  lastError     String?
+  lastSyncedAt  DateTime?
+  updatedAt     DateTime @updatedAt
+}
+
+/* ===================== 会計 ===================== */
+
+/// 証憑（電子帳簿保存法の保存対象）。太字の3項目が検索要件。
+model Document {
+  id                String   @id @default(cuid())
+  kind              String // issued_invoice | received_receipt | received_invoice
+  filePath          String
+  mimeType          String   @default("application/pdf")
+  fileHash          String   @default("")
+  transactionDate   String // 検索要件①
+  transactionAmount Int // 検索要件②
+  counterpartyName  String // 検索要件③
+  retentionUntil    String // この日まで削除禁止
+  uploadedAt        DateTime @default(now())
+  deletedAt         DateTime?
+  expenses          Expense[]
+  logs              DocumentLog[]
+
+  @@index([transactionDate])
+  @@index([transactionAmount])
+  @@index([counterpartyName])
+}
+
+model DocumentLog {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id])
+  action     String // create | update | logical_delete | restore
+  detail     String   @default("")
+  actorName  String   @default("オーナー")
+  createdAt  DateTime @default(now())
+}
+
+model Account {
+  code      String  @id
+  name      String
+  type      String // asset | liability | equity | revenue | expense
+  taxCategory String @default("対象外") // 課税10 | 軽減8 | 非課税 | 不課税 | 対象外
+  sortOrder Int     @default(0)
+  lines     JournalLine[]
+  expenses  Expense[]
+  assets    FixedAsset[]
+}
+
+model FiscalYear {
+  id        String   @id @default(cuid())
+  name      String
+  startDate String
+  endDate   String
+  status    String   @default("open") // open | closed
+  entries   JournalEntry[]
+}
+
+model JournalEntry {
+  id           String   @id @default(cuid())
+  fiscalYearId String
+  fiscalYear   FiscalYear @relation(fields: [fiscalYearId], references: [id])
+  entryDate    String // YYYY-MM-DD
+  description  String
+  sourceType   String // invoice | payment | expense | depreciation | adjustment | manual
+  sourceId     String?
+  isAdjusting  Boolean  @default(false)
+  isLocked     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  lines        JournalLine[]
+  expenses     Expense[]
+
+  @@index([entryDate])
+}
+
+model JournalLine {
+  id             String  @id @default(cuid())
+  journalEntryId String
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  accountCode    String
+  account        Account @relation(fields: [accountCode], references: [code])
+  side           String // debit | credit
+  amount         Int
+  taxCategory    String  @default("対象外")
+  taxAmount      Int     @default(0)
+  hasQualifiedInvoice Boolean @default(true)
+  note           String  @default("")
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  expenseDate   String
+  accountCode   String
+  account       Account  @relation(fields: [accountCode], references: [code])
+  amount        Int // 税込
+  taxCategory   String   @default("課税10")
+  vendorName    String
+  vendorRegistrationNumber String?
+  invoiceStatus String   @default("qualified") // qualified | non_qualified | small_amount_exception
+  documentId    String?
+  document      Document? @relation(fields: [documentId], references: [id])
+  journalEntryId String?
+  journalEntry  JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  ocrRawText    String   @default("")
+  note          String   @default("")
+  createdAt     DateTime @default(now())
+
+  @@index([expenseDate])
+}
+
+model FixedAsset {
+  id                     String @id @default(cuid())
+  name                   String
+  acquisitionDate        String
+  acquisitionCost        Int
+  accountCode            String
+  account                Account @relation(fields: [accountCode], references: [code])
+  usefulLife             Int // 耐用年数
+  method                 String @default("straight_line") // 定額法
+  accumulatedDepreciation Int   @default(0)
+  disposedAt             String?
 }
