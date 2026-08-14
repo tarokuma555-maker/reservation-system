@@ -5,7 +5,11 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/** デプロイ環境の切り分け用。原因が分かったら削除する。 */
+/**
+ * デプロイ環境の状態を返す診断用エンドポイント。
+ * デモが空で表示されるといった不調のとき、ここを見れば
+ * DBファイルの所在・件数・データの投入日が一度に分かる。
+ */
 export async function GET() {
   const bundled = path.join(process.cwd(), "prisma", "dev.db");
   const tmp = "/tmp/demo-db/dev.db";
