@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { getConnection, getCredentials, markConnectionResult } from "./connections";
 import { getOwnerStaffId } from "./staff";
 import { formatYen, toDateStr } from "./time";
 
@@ -8,44 +9,177 @@ import { formatYen, toDateStr } from "./time";
  * 予約データの「正」は本システムのDB。Googleカレンダーはミラーであり、
  * 私用予定の取り込み口でもある。
  *
- * GOOGLE_REFRESH_TOKEN 等が設定されていれば実際のGoogle Calendar APIを呼び、
- * 未設定なら CalendarEvent テーブルを「Google側の状態」に見立てて同じ処理を行う。
- * どちらのモードでも同期状態は CalendarSync に残るため、失敗時のリトライも共通。
+ * つながっていれば実際のGoogle Calendar APIを呼び、つながっていなければ
+ * CalendarEvent テーブルを「Google側の状態」に見立てて同じ処理を行う。
+ * どちらの場合も同期状態は CalendarSync に残るため、失敗時のやり直しも共通。
  */
 
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
+const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
-export function isGoogleLive(): boolean {
-  return Boolean(
-    process.env.GOOGLE_CLIENT_ID &&
-      process.env.GOOGLE_CLIENT_SECRET &&
-      process.env.GOOGLE_REFRESH_TOKEN
+/** カレンダーの読み書きだけを求める。メールや連絡先には触らない。 */
+export const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar";
+
+export type GoogleCredentials = {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+};
+
+function credentialsFromEnv(): GoogleCredentials | null {
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN } = process.env;
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) return null;
+  return {
+    clientId: GOOGLE_CLIENT_ID,
+    clientSecret: GOOGLE_CLIENT_SECRET,
+    refreshToken: GOOGLE_REFRESH_TOKEN,
+  };
+}
+
+export async function getGoogleCredentials(): Promise<GoogleCredentials | null> {
+  const { credentials } = await getCredentials<GoogleCredentials>(
+    "google_calendar",
+    credentialsFromEnv
   );
+  return credentials;
 }
 
-export function googleMode(): "live" | "mock" {
-  return isGoogleLive() ? "live" : "mock";
+export async function getGoogleConnection() {
+  return getConnection("google_calendar", () => credentialsFromEnv() !== null);
 }
 
-export function targetCalendarId(): string {
+export async function isGoogleLive(): Promise<boolean> {
+  return (await getGoogleCredentials()) !== null;
+}
+
+export async function googleMode(): Promise<"live" | "mock"> {
+  return (await isGoogleLive()) ? "live" : "mock";
+}
+
+/** 書き出し先のカレンダー。つないだあと画面から選べる。 */
+export async function targetCalendarId(): Promise<string> {
+  const conn = await getGoogleConnection();
+  const fromConfig = conn.config.calendarId;
+  if (typeof fromConfig === "string" && fromConfig) return fromConfig;
   return process.env.GOOGLE_CALENDAR_ID ?? "primary";
 }
 
-async function getAccessToken(): Promise<string> {
+/* ---------------- つなぐ（OAuth） ---------------- */
+
+/**
+ * Googleの確認画面へ送るURLを組み立てる。
+ *
+ * access_type=offline と prompt=consent を必ず付ける。これが無いと
+ * リフレッシュトークンが返らず、一度きりの接続になってしまう。
+ */
+export function buildConsentUrl(params: {
+  clientId: string;
+  redirectUri: string;
+  state: string;
+}): string {
+  const q = new URLSearchParams({
+    client_id: params.clientId,
+    redirect_uri: params.redirectUri,
+    response_type: "code",
+    scope: CALENDAR_SCOPE,
+    access_type: "offline",
+    prompt: "consent",
+    include_granted_scopes: "true",
+    state: params.state,
+  });
+  return `${AUTH_URL}?${q.toString()}`;
+}
+
+/** 戻ってきた引換券を、ずっと使えるリフレッシュトークンに交換する */
+export async function exchangeCodeForRefreshToken(params: {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  code: string;
+}): Promise<{ ok: true; refreshToken: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: params.clientId,
+        client_secret: params.clientSecret,
+        redirect_uri: params.redirectUri,
+        code: params.code,
+        grant_type: "authorization_code",
+      }),
+    });
+    const json = (await res.json()) as { refresh_token?: string; error_description?: string };
+    if (!res.ok) {
+      return { ok: false, error: json.error_description ?? `Googleからの返事: ${res.status}` };
+    }
+    if (!json.refresh_token) {
+      return {
+        ok: false,
+        error:
+          "Googleから継続利用の許可が返りませんでした。一度 https://myaccount.google.com/permissions " +
+          "でこのアプリの許可を取り消してから、もう一度おためしください。",
+      };
+    }
+    return { ok: true, refreshToken: json.refresh_token };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** つながっているカレンダーの一覧。書き出し先を選ぶために使う。 */
+export async function listCalendars(): Promise<{ id: string; summary: string; primary: boolean }[]> {
+  const json = (await calendarFetch("/users/me/calendarList")) as {
+    items?: { id: string; summary: string; primary?: boolean }[];
+  };
+  return (json.items ?? []).map((c) => ({
+    id: c.id,
+    summary: c.summary,
+    primary: Boolean(c.primary),
+  }));
+}
+
+/** 合いことばが生きているか確かめる */
+export async function testGoogleCredentials(
+  c: GoogleCredentials
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await accessTokenFrom(c);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+async function accessTokenFrom(c: GoogleCredentials): Promise<string> {
   const res = await fetch(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: process.env.GOOGLE_REFRESH_TOKEN!,
+      client_id: c.clientId,
+      client_secret: c.clientSecret,
+      refresh_token: c.refreshToken,
       grant_type: "refresh_token",
     }),
   });
-  if (!res.ok) throw new Error(`Google token refresh failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) {
+    const text = await res.text();
+    if (res.status === 400 || res.status === 401) {
+      throw new Error(
+        "Googleとのつながりが切れています。許可が取り消された可能性があります。つなぎ直してください。"
+      );
+    }
+    throw new Error(`Googleからの返事: ${res.status} ${text}`);
+  }
   const json = (await res.json()) as { access_token: string };
   return json.access_token;
+}
+
+async function getAccessToken(): Promise<string> {
+  const c = await getGoogleCredentials();
+  if (!c) throw new Error("Googleカレンダーにつながっていません");
+  return accessTokenFrom(c);
 }
 
 async function calendarFetch(path: string, init: RequestInit = {}) {
@@ -142,13 +276,13 @@ export type SyncResult = {
 export async function syncReservationToCalendar(reservationId: string): Promise<SyncResult> {
   const input = await buildEventInput(reservationId);
   const existing = await prisma.calendarSync.findUnique({ where: { reservationId } });
-  const calendarId = targetCalendarId();
+  const calendarId = await targetCalendarId();
 
   try {
     let googleEventId: string;
     let meetUrl: string | null = null;
 
-    if (isGoogleLive()) {
+    if (await isGoogleLive()) {
       const body = toGoogleEventBody(input, input.needsConference);
       const query = input.needsConference ? "?conferenceDataVersion=1" : "";
 
@@ -229,7 +363,7 @@ export async function syncReservationToCalendar(reservationId: string): Promise<
       },
     });
 
-    return { status: "synced", googleEventId, meetUrl, mode: googleMode() };
+    return { status: "synced", googleEventId, meetUrl, mode: await googleMode() };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     await prisma.calendarSync.upsert({
@@ -247,16 +381,16 @@ export async function syncReservationToCalendar(reservationId: string): Promise<
         lastError: message,
       },
     });
-    return { status: "failed", error: message, mode: googleMode() };
+    return { status: "failed", error: message, mode: await googleMode() };
   }
 }
 
 export async function deleteReservationFromCalendar(reservationId: string) {
   const sync = await prisma.calendarSync.findUnique({ where: { reservationId } });
-  if (!sync?.googleEventId) return { status: "skipped" as const, mode: googleMode() };
+  if (!sync?.googleEventId) return { status: "skipped" as const, mode: await googleMode() };
 
   try {
-    if (isGoogleLive()) {
+    if (await isGoogleLive()) {
       await calendarFetch(
         `/calendars/${encodeURIComponent(sync.calendarId)}/events/${sync.googleEventId}`,
         { method: "DELETE" }
@@ -271,14 +405,14 @@ export async function deleteReservationFromCalendar(reservationId: string) {
       where: { reservationId },
       data: { syncStatus: "deleted", lastSyncedAt: new Date(), lastError: null },
     });
-    return { status: "deleted" as const, mode: googleMode() };
+    return { status: "deleted" as const, mode: await googleMode() };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     await prisma.calendarSync.update({
       where: { reservationId },
       data: { syncStatus: "failed", retryCount: { increment: 1 }, lastError: message },
     });
-    return { status: "failed" as const, error: message, mode: googleMode() };
+    return { status: "failed" as const, error: message, mode: await googleMode() };
   }
 }
 
@@ -288,7 +422,7 @@ export async function deleteReservationFromCalendar(reservationId: string) {
  */
 export async function importPersonalEventsAsBlocks(fromDate: Date, toDate: Date) {
   const staffId = await getOwnerStaffId();
-  const calendarId = targetCalendarId();
+  const calendarId = await targetCalendarId();
 
   type Ext = { private?: Record<string, string> };
   type GEvent = {
@@ -301,7 +435,7 @@ export async function importPersonalEventsAsBlocks(fromDate: Date, toDate: Date)
 
   let events: GEvent[];
 
-  if (isGoogleLive()) {
+  if (await isGoogleLive()) {
     const params = new URLSearchParams({
       timeMin: fromDate.toISOString(),
       timeMax: toDate.toISOString(),
@@ -355,7 +489,7 @@ export async function importPersonalEventsAsBlocks(fromDate: Date, toDate: Date)
     }
   }
 
-  return { imported, skipped, total: events.length, mode: googleMode() };
+  return { imported, skipped, total: events.length, mode: await googleMode() };
 }
 
 /**
@@ -377,7 +511,7 @@ export async function detectAndRepairDrift() {
     if (!reservation || !["confirmed", "completed"].includes(reservation.status)) continue;
 
     let missing = false;
-    if (isGoogleLive()) {
+    if (await isGoogleLive()) {
       try {
         await calendarFetch(
           `/calendars/${encodeURIComponent(sync.calendarId)}/events/${sync.googleEventId}`
@@ -398,7 +532,7 @@ export async function detectAndRepairDrift() {
     }
   }
 
-  return { repaired, mode: googleMode() };
+  return { repaired, mode: await googleMode() };
 }
 
 /** 失敗した同期をまとめてやり直す */
@@ -423,7 +557,7 @@ export async function syncAllReservations() {
     const res = await syncReservationToCalendar(r.id);
     res.status === "synced" ? ok++ : ng++;
   }
-  return { ok, ng, mode: googleMode() };
+  return { ok, ng, mode: await googleMode() };
 }
 
 function mockMeetCode(seed: string): string {
@@ -435,10 +569,10 @@ function mockMeetCode(seed: string): string {
   return `${pick(0, 3)}-${pick(3, 4)}-${pick(7, 3)}`;
 }
 
-export function describeSyncTarget(): string {
-  return isGoogleLive()
-    ? `Googleカレンダー（${targetCalendarId()}）に実際に書き出します`
-    : "モックモード: Google側の状態をこのシステム内で再現しています";
+export async function describeSyncTarget(): Promise<string> {
+  return (await isGoogleLive())
+    ? `Googleカレンダー（${await targetCalendarId()}）に実際に書き出します`
+    : "まだつながっていません。Google側の動きをこのシステム内で再現しています";
 }
 
 export { toDateStr };

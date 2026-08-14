@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { googleMode, targetCalendarId } from "@/lib/google-calendar";
+import { getGoogleConnection, listCalendars, targetCalendarId } from "@/lib/google-calendar";
 import {
   Button,
   Card,
   Empty,
   Field,
-  ModeBanner,
   SectionTitle,
   TableShell,
   Td,
@@ -14,6 +13,8 @@ import {
   inputClass,
 } from "@/components/ui";
 import { Icon } from "@/components/Icon";
+import GoogleConnectCard from "@/components/GoogleConnectCard";
+import { selectCalendarAction } from "@/app/connect-actions";
 import { addDays, formatRange, todayStr } from "@/lib/time";
 import {
   driftCheckAction,
@@ -26,6 +27,9 @@ import {
 
 export const dynamic = "force-dynamic";
 
+/** 画面が長くなりすぎないよう、直近ぶんだけ出す。省いた件数は必ず画面にも書く。 */
+const EVENT_LIMIT = 12;
+
 const SYNC_LABEL: Record<string, { label: string; cls: string }> = {
   synced: { label: "うつせました", cls: "bg-good-600 text-white" },
   pending: { label: "まだうつしていません", cls: "bg-warn-100 text-warn-700" },
@@ -33,10 +37,17 @@ const SYNC_LABEL: Record<string, { label: string; cls: string }> = {
   deleted: { label: "消しました", cls: "bg-slate-200 text-slate-600" },
 };
 
-export default async function CalendarSyncPage() {
+export default async function CalendarSyncPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ connected?: string; reason?: string }>;
+}) {
+  const q = await searchParams;
+  const google = await getGoogleConnection();
+
   const [syncs, events, blocks] = await Promise.all([
     prisma.calendarSync.findMany({ orderBy: { updatedAt: "desc" }, take: 30 }),
-    prisma.calendarEvent.findMany({ orderBy: { startAt: "asc" }, take: 40 }),
+    prisma.calendarEvent.findMany({ orderBy: { startAt: "asc" }, take: EVENT_LIMIT }),
     prisma.blockedSlot.findMany({
       where: { source: "google" },
       orderBy: { startAt: "asc" },
@@ -50,8 +61,13 @@ export default async function CalendarSyncPage() {
   });
   const resMap = new Map(reservations.map((r) => [r.id, r]));
 
-  const live = googleMode() === "live";
   const failedCount = syncs.filter((s) => s.syncStatus === "failed").length;
+  const calendarId = await targetCalendarId();
+
+  // つながっているときだけ、書き出し先を選べるように一覧を取る
+  const calendars = google.connected
+    ? await listCalendars().catch(() => [] as { id: string; summary: string; primary: boolean }[])
+    : [];
 
   return (
     <div className="space-y-8">
@@ -63,18 +79,55 @@ export default async function CalendarSyncPage() {
         </p>
       </header>
 
-      <ModeBanner
-        live={live}
-        liveTitle={`Googleカレンダーにつながっています（${targetCalendarId()}）`}
-        mockTitle="いまは お試しモード です（Googleには書きこんでいません）"
-      >
-        {live ? null : (
-          <p>
-            Googleの合いことばを入れると、そのまま本物のカレンダーに書きこまれます。
-            下に出ている「Googleカレンダーの中身」は、<b>実際に送るのとまったく同じ内容</b>で作っています。
+      {q.connected === "yes" ? (
+        <div className="flex gap-3 rounded-card border border-good-100 bg-good-50 px-4 py-3.5">
+          <Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-good-600" strokeWidth={2.6} />
+          <p className="text-sm font-bold text-good-700">
+            Googleカレンダーにつながりました。これからのご予定は自動でうつります。
           </p>
-        )}
-      </ModeBanner>
+        </div>
+      ) : null}
+
+      {q.connected === "no" ? (
+        <div className="flex gap-3 rounded-card border border-bad-100 bg-bad-50 px-4 py-3.5">
+          <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-bad-600" />
+          <p className="text-xs leading-relaxed text-bad-700">
+            {q.reason ?? "つながりませんでした。もう一度おためしください。"}
+          </p>
+        </div>
+      ) : null}
+
+      <GoogleConnectCard
+        connected={google.connected}
+        status={google.status}
+        lastError={google.lastError}
+        connectedAt={google.connectedAt}
+        fromEnv={google.fromEnv}
+      />
+
+      {google.connected && calendars.length > 0 ? (
+        <Card>
+          <SectionTitle hint="ご予約を書き出す先です。ふだんお使いのものを選んでください">
+            どのカレンダーに書き出すか
+          </SectionTitle>
+          <form action={selectCalendarAction} className="flex flex-wrap items-end gap-3">
+            <Field label="書き出し先" className="min-w-[240px] flex-1">
+              <select name="calendarId" defaultValue={calendarId} className={inputClass}>
+                {calendars.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.summary}
+                    {c.primary ? "（ふだんお使いのカレンダー）" : ""}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Button type="submit" variant="secondary">
+              <Icon name="check" className="h-4 w-4" />
+              ここに書き出す
+            </Button>
+          </form>
+        </Card>
+      ) : null}
 
       <div className="flex gap-3 rounded-card border border-brand-200 bg-brand-50/60 px-4 py-3.5">
         <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
@@ -117,7 +170,13 @@ export default async function CalendarSyncPage() {
       </section>
 
       <section>
-        <SectionTitle hint="本物のGoogleカレンダーにも、この内容で入ります">
+        <SectionTitle
+          hint={
+            events.length >= EVENT_LIMIT
+              ? `本物のGoogleカレンダーにも、この内容で入ります（直近の${EVENT_LIMIT}件だけ出しています）`
+              : "本物のGoogleカレンダーにも、この内容で入ります"
+          }
+        >
           Googleカレンダーの中身
         </SectionTitle>
         {events.length === 0 ? (
@@ -299,16 +358,6 @@ export default async function CalendarSyncPage() {
         )}
       </section>
 
-      <div className="flex gap-3 rounded-card border border-slate-200/80 bg-surface px-4 py-3.5">
-        <Icon name="help" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
-        <div className="text-xs leading-relaxed text-slate-600">
-          <p className="font-bold text-ink">本物のGoogleカレンダーにつなぐには</p>
-          <p className="mt-1">
-            ふだんお使いのGoogleアカウントで一度だけ「このシステムにカレンダーを見せてもいいですか」に
-            はいと答えていただくだけです。あとは自動でうつります。この作業はこちらで代行できます。
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const signature = req.headers.get("x-line-signature");
 
-  if (isLineLive() && !verifyLineSignature(rawBody, signature)) {
+  if ((await isLineLive()) && !(await verifyLineSignature(rawBody, signature))) {
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 

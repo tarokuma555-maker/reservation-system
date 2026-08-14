@@ -23,6 +23,8 @@ export default async function TalkPage() {
   const customer = await getCurrentCustomer();
   if (!customer) return null;
 
+  const mode = await lineMode();
+
   const messages = await prisma.outboundMessage.findMany({
     where: { customerId: customer.id },
     orderBy: { createdAt: "asc" },
@@ -31,7 +33,7 @@ export default async function TalkPage() {
 
   return (
     <div className="min-h-[70vh] space-y-4 bg-brand-50 p-4">
-      {lineMode() === "mock" ? (
+      {mode === "mock" ? (
         <p className="rounded-card border border-slate-200/80 bg-surface px-3.5 py-2.5 text-2xs leading-relaxed text-slate-600 shadow-card">
           いまは お試しモード です。実際のLINEには送っていませんが、
           <b>ここに出ている見た目のまま、お客様のトーク画面に届きます</b>。

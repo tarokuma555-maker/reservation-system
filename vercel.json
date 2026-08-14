@@ -4,8 +4,13 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "functions": {
-    "src/app/**/*": {
-      "maxDuration": 60
-    }
-  }
+    "src/app/**/*": { "maxDuration": 60 }
+  },
+  "crons": [
+    { "path": "/api/cron/reminders", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/online-soon", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/recurring", "schedule": "0 18 * * *" },
+    { "path": "/api/cron/calendar-repair", "schedule": "30 18 * * *" },
+    { "path": "/api/cron/health", "schedule": "0 */6 * * *" }
+  ]
 }

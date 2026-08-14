@@ -48,6 +48,13 @@ export async function seedDemoData() {
   await prisma.customer.deleteMany();
   await prisma.businessHour.deleteMany();
   await prisma.holiday.deleteMany();
+  // 管理画面に入れるメールアドレスは引き継ぐ（消すとログインできなくなる）
+  const knownStaffEmails = (
+    await prisma.staff.findMany({ where: { email: { not: null } }, select: { email: true } })
+  )
+    .map((s) => s.email)
+    .filter((e): e is string => Boolean(e));
+
   await prisma.staff.deleteMany();
   await prisma.setting.deleteMany();
 
@@ -63,8 +70,13 @@ export async function seedDemoData() {
       role: "owner",
       canHandleOnline: true,
       baseAddress: DEFAULT_SETTINGS.baseAddress,
+      email: knownStaffEmails[0] ?? null,
     },
   });
+
+  for (const email of knownStaffEmails.slice(1)) {
+    await prisma.staff.create({ data: { name: email.split("@")[0], email, role: "staff" } });
+  }
 
   // 営業時間: 平日9:00-18:00 / 土9:00-15:00 / 日休
   for (let d = 1; d <= 5; d++) {
@@ -541,19 +553,14 @@ export async function seedDemoData() {
 const SEED_MARKER_KEY = "demo_seeded_on";
 
 /**
- * デモの日付が古くなっていたら作り直す。
- * サーバーレス環境では起動のたびにこれが走り、常に「今日」を基準にしたデータになる。
+ * 初期データがまだ入っていなければ入れる。
+ *
+ * デモでは「日付が変われば作り直す」だったが、本番では**すでにデータがあれば何もしない**。
+ * 実際のご予約を消してしまわないため。作り直したいときは `npm run db:reset` を使う。
  */
-export async function ensureFreshDemoData() {
-  const marker = await prisma.setting.findUnique({ where: { key: SEED_MARKER_KEY } }).catch(() => null);
-  if (marker) {
-    try {
-      const { seededOn } = JSON.parse(marker.value) as { seededOn: string };
-      if (seededOn === todayStr()) return { reseeded: false };
-    } catch {
-      /* 壊れていたら作り直す */
-    }
-  }
+export async function ensureInitialData() {
+  const staffCount = await prisma.staff.count().catch(() => -1);
+  if (staffCount !== 0) return { seeded: false };
   await seedDemoData();
-  return { reseeded: true };
+  return { seeded: true };
 }

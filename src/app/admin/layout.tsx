@@ -43,8 +43,8 @@ const NAV: { group: string; items: { href: string; label: string; icon: IconName
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
-  const line = lineMode();
-  const google = googleMode();
+  const line = await lineMode();
+  const google = await googleMode();
 
   return (
     <div className="min-h-screen lg:flex">

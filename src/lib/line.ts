@@ -1,28 +1,102 @@
 import crypto from "node:crypto";
 import { prisma } from "./db";
+import { getConnection, getCredentials } from "./connections";
 
 /**
  * LINE Messaging API クライアント。
  *
- * LINE_CHANNEL_ACCESS_TOKEN が設定されていれば実際にAPIを叩き（ライブモード）、
- * 未設定ならHTTPを送らずDBに記録するだけになる（モックモード）。
- * どちらのモードでも、実際に送信されるJSONは同じものを組み立てて保存するため、
- * 認証情報を入れるだけで実接続に切り替わる。
+ * 合いことば（チャネルアクセストークンとチャネルシークレット）が入っていれば
+ * 実際にAPIを叩き、入っていなければHTTPを送らずDBに記録するだけになる。
+ * どちらの場合も、実際に送信されるJSONは同じものを組み立てて保存するため、
+ * 合いことばを入れるだけで実接続に切り替わる。
+ *
+ * 合いことばの置き場所は2つある。管理画面から入れた値（DB）を優先し、
+ * 無ければ環境変数を見る。画面から設定できるようにしたのは、
+ * ITに詳しくない方でもご自身でつなぎこめるようにするため。
  */
 
 const API_BASE = "https://api.line.me/v2/bot";
 
-export function isLineLive(): boolean {
-  return Boolean(process.env.LINE_CHANNEL_ACCESS_TOKEN);
+export type LineCredentials = {
+  accessToken: string;
+  channelSecret: string;
+  /** LIFFアプリのID。お客様の画面をLINE内で開くために使う */
+  liffId?: string;
+};
+
+function credentialsFromEnv(): LineCredentials | null {
+  if (!process.env.LINE_CHANNEL_ACCESS_TOKEN) return null;
+  return {
+    accessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+    channelSecret: process.env.LINE_CHANNEL_SECRET ?? "",
+    liffId: process.env.LIFF_ID,
+  };
 }
 
-export function lineMode(): "live" | "mock" {
-  return isLineLive() ? "live" : "mock";
+export async function getLineCredentials(): Promise<LineCredentials | null> {
+  const { credentials } = await getCredentials<LineCredentials>("line", credentialsFromEnv);
+  return credentials;
 }
 
-/** Webhookの署名検証。ライブ運用では必須。 */
-export function verifyLineSignature(rawBody: string, signature: string | null): boolean {
-  const secret = process.env.LINE_CHANNEL_SECRET;
+export async function getLineConnection() {
+  return getConnection("line", () => Boolean(process.env.LINE_CHANNEL_ACCESS_TOKEN));
+}
+
+export async function isLineLive(): Promise<boolean> {
+  const c = await getLineCredentials();
+  return Boolean(c?.accessToken);
+}
+
+export async function lineMode(): Promise<"live" | "mock"> {
+  return (await isLineLive()) ? "live" : "mock";
+}
+
+/**
+ * 合いことばが本物か、その場で確かめる。
+ *
+ * 保存する前に必ず通す。まちがった値を保存してしまうと
+ * 「送ったつもりで届いていない」という、いちばん気づきにくい壊れ方をするため。
+ */
+export async function testLineCredentials(
+  accessToken: string
+): Promise<{ ok: true; botName: string; basicId: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/info`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (res.status === 401) {
+      return {
+        ok: false,
+        error:
+          "この合いことばではLINEに入れませんでした。コピーもれや、余分な空白が入っていないかご確認ください。",
+      };
+    }
+    if (!res.ok) {
+      return { ok: false, error: `LINEからの返事: ${res.status}` };
+    }
+
+    const info = (await res.json()) as { displayName?: string; basicId?: string };
+    return {
+      ok: true,
+      botName: info.displayName ?? "名前を取得できませんでした",
+      basicId: info.basicId ?? "",
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: `LINEにつながりませんでした: ${e instanceof Error ? e.message : String(e)}`,
+    };
+  }
+}
+
+/** LINEから届いたお知らせが本物かどうかを確かめる。実接続では必須。 */
+export async function verifyLineSignature(
+  rawBody: string,
+  signature: string | null
+): Promise<boolean> {
+  const credentials = await getLineCredentials();
+  const secret = credentials?.channelSecret;
   if (!secret) return false;
   if (!signature) return false;
 
@@ -33,12 +107,32 @@ export function verifyLineSignature(rawBody: string, signature: string | null): 
   return crypto.timingSafeEqual(a, b);
 }
 
+/** LINEに登録されているお客様の表示名などを取る（友だち追加のときに使う） */
+export async function fetchLineProfile(
+  lineUserId: string
+): Promise<{ displayName: string; pictureUrl?: string } | null> {
+  const credentials = await getLineCredentials();
+  if (!credentials?.accessToken) return null;
+  try {
+    const res = await fetch(`${API_BASE}/profile/${lineUserId}`, {
+      headers: { Authorization: `Bearer ${credentials.accessToken}` },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as { displayName: string; pictureUrl?: string };
+  } catch {
+    return null;
+  }
+}
+
 async function callLineApi(path: string, body: unknown, method = "POST") {
+  const credentials = await getLineCredentials();
+  const accessToken = credentials?.accessToken;
+  if (!accessToken) throw new Error("LINEにつながっていません");
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: method === "GET" ? undefined : JSON.stringify(body),
   });
@@ -53,7 +147,7 @@ export type LineMessage = Record<string, unknown>;
 
 /**
  * プッシュメッセージを送る。送信内容は必ず OutboundMessage に残す。
- * モックモードでも同じレコードが作られるので、管理画面とトーク画面で確認できる。
+ * つながっていない状態でも同じレコードが作られるので、管理画面で内容を確認できる。
  */
 export async function pushMessage(params: {
   customerId: string;
@@ -75,7 +169,7 @@ export async function pushMessage(params: {
     },
   });
 
-  if (!isLineLive()) {
+  if (!(await isLineLive())) {
     return prisma.outboundMessage.update({
       where: { id: record.id },
       data: { status: "mocked", sentAt: new Date() },
@@ -230,9 +324,9 @@ export function buildRichMenuPayload(params: {
   };
 }
 
-/** リッチメニューを登録し、対象ユーザーにリンクする（ライブモードのみ実際に呼ばれる） */
+/** リッチメニューを登録し、対象ユーザーにリンクする（実接続のときだけ実際に呼ばれる） */
 export async function registerRichMenu(payload: ReturnType<typeof buildRichMenuPayload>) {
-  if (!isLineLive()) {
+  if (!(await isLineLive())) {
     return { richMenuId: `mock-${Date.now()}`, mocked: true };
   }
   const res = (await callLineApi("/richmenu", payload)) as { richMenuId: string };
@@ -240,7 +334,7 @@ export async function registerRichMenu(payload: ReturnType<typeof buildRichMenuP
 }
 
 export async function linkRichMenuToUser(lineUserId: string, richMenuId: string) {
-  if (!isLineLive()) return { mocked: true };
+  if (!(await isLineLive())) return { mocked: true };
   await callLineApi(`/user/${lineUserId}/richmenu/${richMenuId}`, {}, "POST");
   return { mocked: false };
 }

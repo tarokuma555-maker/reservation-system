@@ -9,6 +9,8 @@ import { Icon } from "@/components/Icon";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const [line, google, ocr] = await Promise.all([lineMode(), googleMode(), ocrMode()]);
+
   const [settings, customers, menus, reservations, rules, invoices, entries] = await Promise.all([
     getSettings(),
     prisma.customer.count(),
@@ -85,9 +87,9 @@ export default async function Home() {
             <b>いま見えているとおりに、本番でも動きます</b>。つなぎこみの作業はこちらで代行できます。
           </p>
           <ul className="mt-4 grid gap-2 sm:grid-cols-3">
-            <ModeChip label="LINE" mode={lineMode()} />
-            <ModeChip label="Googleカレンダー" mode={googleMode()} />
-            <ModeChip label="レシートの読み取り" mode={ocrMode()} />
+            <ModeChip label="LINE" mode={line} />
+            <ModeChip label="Googleカレンダー" mode={google} />
+            <ModeChip label="レシートの読み取り" mode={ocr} />
           </ul>
         </section>
 

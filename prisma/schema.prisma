@@ -1,5 +1,4 @@
-// デモ用スキーマ。
-// 本番は PostgreSQL を想定しているが、デモは追加のインフラなしで動かせるよう SQLite を使う。
+// 本番スキーマ（PostgreSQL）。
 // 金額はすべて「円単位の整数（税込）」で保持する。円未満の単位が存在しないため、
 // 浮動小数点数を一切使わずに消費税計算ができる（要件定義 付録C）。
 
@@ -10,8 +9,41 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  // 接続プール経由。サーバーレスでは接続数が増えやすいため必ずプールを挟む
+  url       = env("DATABASE_URL")
+  // マイグレーションはプールを通せないので直結を使う（未設定なら DATABASE_URL を使う）
+  directUrl = env("DIRECT_URL")
+}
+
+/// 外部サービスとのつながり。合いことばは暗号化して保存する。
+/// 環境変数ではなくDBに置くことで、画面からいつでも別アカウントに繋ぎ替えられる。
+model Connection {
+  provider      String   @id // line | google_calendar | google_vision
+  /// AES-256-GCMで暗号化したJSON。復号しないと読めない
+  credentials   String
+  status        String   @default("connected") // connected | error | disconnected
+  /// どのアカウントに繋がっているかの目印（例: 公式アカウント名）
+  label         String?
+  connectedAt   DateTime @default(now())
+  connectedBy   String?
+  lastCheckedAt DateTime?
+  lastError     String?
+  /// 暗号化されていない付随設定（カレンダーIDなど、秘密でないもの）
+  config        String   @default("{}")
+  updatedAt     DateTime @updatedAt
+}
+
+/// つなぎ替えの履歴。いつ・誰が・どのアカウントに向けたかを残す。
+model ConnectionLog {
+  id        String   @id @default(cuid())
+  provider  String
+  action    String // connected | reconnected | disconnected | check_failed
+  detail    String?
+  actorName String?
+  createdAt DateTime @default(now())
+
+  @@index([provider, createdAt])
 }
 
 model Setting {
@@ -23,10 +55,14 @@ model Setting {
 model Staff {
   id             String        @id @default(cuid())
   name           String
+  /// 管理画面のログインに使うGoogleアカウントのメールアドレス。
+  /// ここに登録された人だけが管理画面に入れる。
+  email          String?       @unique
   role           String        @default("owner") // owner | staff
   canHandleOnline Boolean      @default(true)
   baseAddress    String        @default("")
   isActive       Boolean       @default(true)
+  lastLoginAt    DateTime?
   reservations   Reservation[]
   businessHours  BusinessHour[]
   blockedSlots   BlockedSlot[]

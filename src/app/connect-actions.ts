@@ -1,0 +1,144 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import crypto from "node:crypto";
+import { requireStaff } from "@/lib/auth";
+import { disconnect, saveConnection, updateConnectionConfig } from "@/lib/connections";
+import { getLineCredentials, testLineCredentials, type LineCredentials } from "@/lib/line";
+import { googleRedirectUri, GOOGLE_OAUTH_STATE_COOKIE } from "@/lib/google-oauth";
+import {
+  buildConsentUrl,
+  getGoogleCredentials,
+  listCalendars,
+  testGoogleCredentials,
+} from "@/lib/google-calendar";
+
+/**
+ * 外部サービスとのつなぎこみ。
+ *
+ * どの処理も「保存する前に疎通を確かめる」形にしている。
+ * まちがった合いことばを保存してしまうと「送ったつもりで届いていない」という、
+ * いちばん気づきにくい壊れ方をするため。
+ */
+
+export type ConnectState = { ok?: string; error?: string; detail?: string };
+
+/* ---------------- LINE ---------------- */
+
+export async function connectLineAction(
+  _prev: ConnectState,
+  formData: FormData
+): Promise<ConnectState> {
+  const staff = await requireStaff();
+
+  const accessToken = String(formData.get("accessToken") ?? "").trim();
+  const channelSecret = String(formData.get("channelSecret") ?? "").trim();
+  const liffId = String(formData.get("liffId") ?? "").trim();
+
+  if (!accessToken || !channelSecret) {
+    return { error: "2つとも貼り付けてください。どちらか片方だけでは動きません。" };
+  }
+
+  // 貼りまちがいでいちばん多いのが、前後に空白や改行が混ざるケース。
+  // trim してから確かめているので、その分は自動で直る。
+  const result = await testLineCredentials(accessToken);
+  if (!result.ok) return { error: result.error };
+
+  await saveConnection({
+    provider: "line",
+    credentials: { accessToken, channelSecret, liffId: liffId || undefined },
+    label: result.botName,
+    actorName: staff.name,
+  });
+
+  revalidatePath("/admin", "layout");
+  return {
+    ok: `「${result.botName}」につながりました。`,
+    detail: result.basicId ? `LINE ID: ${result.basicId}` : undefined,
+  };
+}
+
+export async function disconnectLineAction(): Promise<void> {
+  const staff = await requireStaff();
+  await disconnect("line", staff.name);
+  revalidatePath("/admin", "layout");
+}
+
+/** つながったままの状態で、いま本当に届くかを確かめ直す */
+export async function recheckLineAction(): Promise<void> {
+  const credentials = await getLineCredentials();
+  if (!credentials?.accessToken) return;
+  const result = await testLineCredentials(credentials.accessToken);
+  const { markConnectionResult } = await import("@/lib/connections");
+  await markConnectionResult("line", result.ok ? { ok: true } : { ok: false, error: result.error });
+  revalidatePath("/admin", "layout");
+}
+
+/* ---------------- Googleカレンダー ---------------- */
+
+/**
+ * Googleの確認画面へ送り出す。
+ *
+ * 事業者IDと合いことばはこの時点ではまだ保存しない。許可が返ってきて
+ * 初めて保存する。途中でやめたときに、中途半端な状態を残さないため。
+ */
+export async function startGoogleConnectAction(formData: FormData): Promise<void> {
+  await requireStaff();
+
+  const clientId = String(formData.get("clientId") ?? "").trim();
+  const clientSecret = String(formData.get("clientSecret") ?? "").trim();
+  if (!clientId || !clientSecret) redirect("/admin/calendar-sync?error=missing");
+
+  // 戻ってきたときに「自分が始めた手続きか」を確かめるための合いことば
+  const state = crypto.randomBytes(16).toString("base64url");
+  const store = await cookies();
+  store.set(GOOGLE_OAUTH_STATE_COOKIE, JSON.stringify({ state, clientId, clientSecret }), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 15,
+    path: "/",
+  });
+
+  redirect(buildConsentUrl({ clientId, redirectUri: googleRedirectUri(), state }));
+}
+
+export async function disconnectGoogleAction(): Promise<void> {
+  const staff = await requireStaff();
+  await disconnect("google_calendar", staff.name);
+  revalidatePath("/admin", "layout");
+}
+
+export async function selectCalendarAction(formData: FormData): Promise<void> {
+  await requireStaff();
+  const calendarId = String(formData.get("calendarId") ?? "").trim();
+  if (!calendarId) return;
+  await updateConnectionConfig("google_calendar", { calendarId });
+  revalidatePath("/admin/calendar-sync");
+}
+
+/** つながったままの状態で、いま本当に書き込めるかを確かめ直す */
+export async function recheckGoogleAction(): Promise<void> {
+  const credentials = await getGoogleCredentials();
+  if (!credentials) return;
+  const result = await testGoogleCredentials(credentials);
+  const { markConnectionResult } = await import("@/lib/connections");
+  await markConnectionResult(
+    "google_calendar",
+    result.ok ? { ok: true } : { ok: false, error: result.error }
+  );
+  revalidatePath("/admin", "layout");
+}
+
+/** 書き出し先に選べるカレンダーの一覧 */
+export async function fetchCalendarChoices(): Promise<
+  { id: string; summary: string; primary: boolean }[]
+> {
+  try {
+    return await listCalendars();
+  } catch {
+    return [];
+  }
+}

@@ -1,236 +1,229 @@
 import { prisma } from "@/lib/db";
-import { lineMode } from "@/lib/line";
-import { Button, Card, Empty, Field, ModeBanner, SectionTitle, inputClass } from "@/components/ui";
-import { FlexPreview } from "@/components/FlexPreview";
+import { getLineConnection, getLineCredentials } from "@/lib/line";
+import { isEncryptionReady } from "@/lib/crypto";
+import { Button, Card, SectionTitle } from "@/components/ui";
 import { Icon, type IconName } from "@/components/Icon";
-import {
-  publishRichMenuAction,
-  runOnlineReminderBatchAction,
-  runReminderBatchAction,
-  simulateWebhookAction,
-} from "@/app/actions";
+import { SetupProgress, SetupStep, Howto } from "@/components/SetupStep";
+import CopyField from "@/components/CopyField";
+import LineConnectForm from "@/components/LineConnectForm";
+import { disconnectLineAction, recheckLineAction } from "@/app/connect-actions";
+import { publishRichMenuAction } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  sent: { label: "お届けずみ", cls: "bg-good-600 text-white" },
-  mocked: { label: "お試し（実際には送っていません）", cls: "bg-slate-200 text-slate-700" },
-  failed: { label: "届きませんでした", cls: "bg-bad-100 text-bad-700" },
-  queued: { label: "送信の順番待ち", cls: "bg-warn-100 text-warn-700" },
-};
+/** お客様に自動で届くおしらせ。何がいつ届くかを、ひと目で分かるようにする。 */
+const NOTIFICATIONS: { icon: IconName; when: string; what: string }[] = [
+  { icon: "calendarCheck", when: "ご予約をいただいたとき", what: "承りましたのご連絡" },
+  { icon: "edit", when: "日時を変えたとき", what: "変更後の日時のご案内" },
+  { icon: "close", when: "お取り消しになったとき", what: "取り消しのご連絡とキャンセル料" },
+  { icon: "skip", when: "定期のお客様が1回お休みされたとき", what: "承りましたのご連絡" },
+  { icon: "bell", when: "ご予約の前日", what: "明日おうかがいしますのおしらせ" },
+  { icon: "online", when: "オンラインが始まる少し前", what: "ビデオ通話のご案内" },
+  { icon: "check", when: "お仕事が終わったとき", what: "ありがとうございましたのお礼" },
+  { icon: "receipt", when: "領収書を出したとき", what: "領収書のお届け" },
+  { icon: "user", when: "友だち追加されたとき", what: "はじめましてのごあいさつ" },
+];
 
-/** メッセージの種類を、ふだんの言葉に置きかえる */
-const TYPE_LABEL: Record<string, string> = {
-  booking_confirmed: "ご予約を承りました",
-  rescheduled: "日時の変更をお知らせ",
-  cancelled: "キャンセルをお知らせ",
-  skipped: "今回のお休みをお知らせ",
-  reminder: "前日のおしらせ",
-  online_soon: "オンライン開始前のおしらせ",
-  completed: "おわったあとのお礼",
-  invoice: "領収書のお届け",
-  welcome: "はじめましてのごあいさつ",
-};
-
-/** LINEから届く動きの種類 */
-const EVENT_LABEL: Record<string, string> = {
-  follow: "友だち追加",
-  unfollow: "ブロック",
-  message: "メッセージが届いた",
-  postback: "ボタンが押された",
-};
-
-export default async function MessagesPage() {
-  const [messages, events, richMenus, customers] = await Promise.all([
-    prisma.outboundMessage.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      include: { customer: true },
-    }),
-    prisma.webhookEvent.findMany({ orderBy: { receivedAt: "desc" }, take: 10 }),
-    prisma.richMenu.findMany({ orderBy: { target: "asc" } }),
-    prisma.customer.findMany({ orderBy: { createdAt: "asc" } }),
+export default async function LineSetupPage() {
+  const [line, credentials, richMenus] = await Promise.all([
+    getLineConnection(),
+    getLineCredentials(),
+    prisma.richMenu.findMany({ orderBy: { target: "desc" } }),
   ]);
 
-  const live = lineMode() === "live";
+  const baseUrl = (process.env.APP_BASE_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
+  const webhookUrl = `${baseUrl}/api/line/webhook`;
+  const liffUrl = `${baseUrl}/liff`;
+
+  const connected = line.connected;
+  const hasLiff = Boolean(credentials?.liffId);
+  const menuPublished = richMenus.some((m) => m.isPublished);
+  const encryptionReady = isEncryptionReady();
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">LINEの設定</h1>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">
-          お客様にお送りするおしらせと、LINEの下に出るメニューをここで確かめられます。
-        </p>
-      </header>
+    <div className="space-y-5">
+      <SetupProgress
+        steps={[
+          { label: "つなぐ", done: connected },
+          { label: "受け口を伝える", done: connected },
+          { label: "メニューを出す", done: menuPublished },
+        ]}
+      />
 
-      <ModeBanner
-        live={live}
-        liveTitle="LINEにつながっています。実際にお客様へ届きます"
-        mockTitle="いまは お試しモード です（お客様には届きません）"
-      >
-        {live ? null : (
-          <p>
-            LINE公式アカウントの管理ページで発行できる「合いことば」を2つ入れると、そのままお客様に届くようになります。
-            <b>お試し中でも、お送りする中身は本番とまったく同じもの</b>を作っています。
-            下に出ている見た目のまま、お客様のトーク画面に表示されます。
+      {!encryptionReady ? (
+        <div className="flex gap-3 rounded-card border border-bad-100 bg-bad-50 px-4 py-3.5">
+          <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-bad-600" />
+          <p className="text-xs leading-relaxed text-bad-700">
+            合いことばを安全にしまうための鍵がまだ用意できていません。
+            この状態では画面からつなぐことができないので、お知らせください。こちらで用意します。
           </p>
-        )}
-      </ModeBanner>
+        </div>
+      ) : null}
 
-      <section>
-        <SectionTitle hint="本番では、毎日決まった時間に自動で送られます">
-          いま、まとめて送る
-        </SectionTitle>
-        <Card className="flex flex-wrap gap-3">
-          <form action={runReminderBatchAction}>
-            <Button type="submit">
-              <Icon name="bell" className="h-4 w-4" />
-              明日のお客様に「前日のおしらせ」を送る
-            </Button>
-          </form>
-          <form action={runOnlineReminderBatchAction}>
-            <Button type="submit" variant="secondary">
-              <Icon name="online" className="h-4 w-4" />
-              まもなく始まるオンラインのお客様に送る
-            </Button>
-          </form>
-        </Card>
-      </section>
-
-      <section>
-        <SectionTitle hint="お客様のトーク画面には、この見た目のまま表示されます">
-          これまでに送ったおしらせ
-        </SectionTitle>
-        {messages.length === 0 ? (
-          <Empty>まだ1通も送っていません</Empty>
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {messages.map((m) => {
-              const s = STATUS_LABEL[m.status] ?? STATUS_LABEL.queued;
-              return (
-                <Card key={m.id}>
-                  <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-ink">{m.customer.name} 様</p>
-                      <p className="text-2xs text-slate-500">{TYPE_LABEL[m.type] ?? m.type}</p>
-                    </div>
-                    <span className={`rounded-pill px-2.5 py-1 text-2xs font-bold ${s.cls}`}>
-                      {s.label}
-                    </span>
-                  </div>
-                  <div className="rounded-xl bg-slate-100 p-3">
-                    <FlexPreview payload={m.payload} />
-                  </div>
-                  {m.errorMessage ? (
-                    <p className="mt-2 flex items-start gap-1.5 text-xs text-bad-600">
-                      <Icon name="alert" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      {m.errorMessage}
-                    </p>
-                  ) : null}
-                  <details className="group mt-2">
-                    <summary className="flex cursor-pointer list-none items-center gap-1.5 text-2xs text-slate-400 transition hover:text-slate-600">
-                      <Icon name="chevronRight" className="h-3 w-3 transition group-open:rotate-90" />
-                      LINEに渡している中身を見る（ふだんは開かなくて大丈夫です）
-                    </summary>
-                    <pre className="mt-1 max-h-64 overflow-auto rounded-xl bg-slate-900 p-3.5 text-[10px] leading-relaxed text-brand-100">
-                      {m.payload}
-                    </pre>
-                  </details>
-                </Card>
-              );
-            })}
+      {line.status === "error" ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-bad-100 bg-bad-50 px-4 py-3.5">
+          <div className="flex min-w-0 gap-3">
+            <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-bad-600" />
+            <div className="min-w-0 text-xs leading-relaxed text-bad-700">
+              <p className="font-bold">LINEとのつながりが切れています</p>
+              <p className="mt-0.5">
+                いまはおしらせが届きません。{line.lastError ? `（${line.lastError}）` : ""}
+              </p>
+            </div>
           </div>
-        )}
-      </section>
-
-      <section>
-        <SectionTitle hint="お客様がLINEで何かしたときに、こちらへ届く合図です">
-          LINEから届いた動き
-        </SectionTitle>
-        <Card className="space-y-4">
-          <form action={simulateWebhookAction} className="flex flex-wrap items-end gap-3">
-            <Field label="どんな動き">
-              <select name="eventType" className={inputClass}>
-                <option value="follow">友だち追加された</option>
-                <option value="message">メッセージが届いた</option>
-                <option value="postback">ボタンが押された</option>
-                <option value="unfollow">ブロックされた</option>
-              </select>
-            </Field>
-            <Field label="どのお客様">
-              <select name="lineUserId" className={inputClass}>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.lineUserId}>
-                    {c.name}
-                  </option>
-                ))}
-                <option value="U_demo_newcomer">（はじめての方）</option>
-              </select>
-            </Field>
-            <Field label="メッセージの中身" className="min-w-[180px] flex-1">
-              <input name="text" placeholder="予約を変更したいです" className={inputClass} />
-            </Field>
-            <Button type="submit" variant="secondary">
-              <Icon name="send" className="h-4 w-4" />
-              ためしに起こしてみる
+          <form action={recheckLineAction}>
+            <Button type="submit" variant="secondary" size="sm">
+              <Icon name="refresh" className="h-3.5 w-3.5" />
+              もう一度確かめる
             </Button>
           </form>
+        </div>
+      ) : null}
 
-          {events.length === 0 ? (
-            <p className="text-sm text-slate-500">まだ何も届いていません</p>
-          ) : (
-            <ul className="divide-y divide-slate-100 text-sm">
-              {events.map((e) => (
-                <li key={e.id} className="py-2.5">
-                  <p className="font-bold text-slate-700">
-                    {EVENT_LABEL[e.type] ?? e.type}
-                    <span className="ml-2 text-2xs font-normal text-slate-400">
-                      {e.receivedAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
-                    </span>
-                  </p>
-                  <p className="text-xs text-slate-600">{e.note}</p>
-                </li>
-              ))}
-            </ul>
-          )}
+      {/* ---------------- 手順1 ---------------- */}
+      <SetupStep
+        n={1}
+        title="LINEとつなぐ"
+        summary="LINEから2つの文字列を写してきて、下に貼り付けます。10分ほどの作業です。"
+        done={connected}
+      >
+        <div className="space-y-5">
+          <details className="group rounded-xl border border-slate-200 bg-slate-50/60">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-xs font-bold text-slate-700">
+              <Icon name="chevronRight" className="h-3.5 w-3.5 transition group-open:rotate-90" />
+              その2つの文字列は、どこにありますか？
+            </summary>
+            <div className="border-t border-slate-200 px-4 py-4">
+              <Howto
+                steps={[
+                  <>
+                    パソコンで{" "}
+                    <a
+                      href="https://developers.line.biz/console/"
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="font-bold text-brand-700 underline"
+                    >
+                      LINE Developers
+                    </a>{" "}
+                    を開き、ふだんお使いのLINEアカウントでログインします
+                  </>,
+                  <>
+                    お店の公式アカウントを選び、<b>「Messaging API設定」</b>のタブを開きます
+                  </>,
+                  <>
+                    いちばん下の<b>「チャネルアクセストークン（長期）」</b>で「発行」を押し、
+                    出てきた長い文字列を写します
+                  </>,
+                  <>
+                    <b>「チャネル基本設定」</b>のタブに移り、<b>「チャネルシークレット」</b>
+                    の文字列を写します
+                  </>,
+                  <>下の欄に、それぞれ貼り付けます</>,
+                ]}
+              />
+              <p className="mt-3 flex items-start gap-1.5 text-2xs leading-relaxed text-slate-500">
+                <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                この2つは、お店のLINEを操作するための合いことばです。人に見せないでください。
+                保存するときは暗号をかけ、画面にも出しません。
+              </p>
+            </div>
+          </details>
 
-          <p className="flex items-start gap-1.5 border-t border-slate-100 pt-3 text-2xs leading-relaxed text-slate-500">
-            <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-            <span>
-              本物のLINEから届いたものかどうかを毎回たしかめてから受け取っています。
-              また、同じ合図が二重に届いても、処理は一度きりです（お客様に同じおしらせが2通いくのを防ぎます）。
-            </span>
-          </p>
-        </Card>
-      </section>
+          <LineConnectForm
+            connected={connected}
+            currentLabel={line.label}
+            currentLiffId={credentials?.liffId ?? null}
+          />
 
-      <section>
-        <SectionTitle hint="はじめての方と、すでにご予約がある方で、出すメニューを変えられます">
-          LINEの下に出るメニュー
-        </SectionTitle>
+          {connected && !line.fromEnv ? (
+            <form action={disconnectLineAction} className="border-t border-slate-100 pt-4">
+              <Button type="submit" variant="danger" size="sm">
+                <Icon name="close" className="h-3.5 w-3.5" />
+                つながりを解除する
+              </Button>
+              <p className="mt-2 text-2xs leading-relaxed text-slate-500">
+                解除すると、お客様におしらせが届かなくなります。ご予約や帳簿はそのまま残ります。
+              </p>
+            </form>
+          ) : null}
+        </div>
+      </SetupStep>
+
+      {/* ---------------- 手順2 ---------------- */}
+      <SetupStep
+        n={2}
+        title="お客様からのご連絡の受け口を、LINEに伝える"
+        summary="お客様が友だち追加したときや、メッセージを送ってくださったときに、それがこちらに届くようにします。"
+        done={connected}
+      >
+        <div className="space-y-4">
+          <CopyField label="この文字列を、LINE側に貼り付けます" value={webhookUrl} />
+
+          <Howto
+            steps={[
+              <>
+                LINE Developers の<b>「Messaging API設定」</b>を開きます
+              </>,
+              <>
+                <b>「Webhook URL」</b>の「編集」を押し、上の文字列を貼って「更新」します
+              </>,
+              <>
+                すぐ下の<b>「Webhookの利用」</b>をオンにします
+              </>,
+              <>
+                同じ画面の<b>「応答メッセージ」</b>を<b>オフ</b>にします。
+                オンのままだと、LINEの自動返信とこちらのおしらせが二重に届いてしまいます
+              </>,
+            ]}
+          />
+
+          <div className="flex gap-2.5 rounded-xl border border-warn-100 bg-warn-50 px-4 py-3">
+            <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warn-600" />
+            <p className="text-2xs leading-relaxed text-warn-700">
+              LINE側に「検証」というボタンがあります。押して<b>成功</b>と出れば、
+              受け口は正しく伝わっています。
+            </p>
+          </div>
+        </div>
+      </SetupStep>
+
+      {/* ---------------- 手順3 ---------------- */}
+      <SetupStep
+        n={3}
+        title="LINEの下に出るメニューを出す"
+        summary="お客様がトーク画面を開いたときに下へ並ぶボタンです。ここから予約していただきます。"
+        done={menuPublished}
+      >
         <div className="grid gap-4 lg:grid-cols-2">
           {richMenus.map((rm) => {
             const areas = JSON.parse(rm.areas) as { label: string; icon: IconName; path: string }[];
             return (
-              <Card key={rm.id}>
+              <div
+                key={rm.id}
+                className={`rounded-xl border p-4 ${
+                  rm.isPublished ? "border-good-100 bg-good-50/50" : "border-slate-200"
+                }`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-ink">{rm.name}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {rm.target === "default" ? "はじめての方に出します" : "ご予約がある方に出します"}
+                    <p className="text-sm font-bold text-ink">
+                      {rm.target === "default"
+                        ? "はじめての方に出すメニュー"
+                        : "ご予約がある方に出すメニュー"}
                     </p>
-                    <p className="text-2xs text-slate-400">
-                      入力欄の上には「{rm.chatBarText}」と表示されます
+                    <p className="mt-0.5 text-2xs text-slate-500">
+                      入力欄の上に「{rm.chatBarText}」と表示されます
                     </p>
                   </div>
                   {rm.isPublished ? (
                     <span className="shrink-0 rounded-pill bg-good-600 px-2.5 py-1 text-2xs font-bold text-white">
-                      公開中
+                      出ています
                     </span>
                   ) : null}
                 </div>
 
-                <div className="mt-3.5 grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-slate-200">
+                <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-slate-200">
                   {areas.map((a) => (
                     <div
                       key={a.path}
@@ -244,27 +237,85 @@ export default async function MessagesPage() {
 
                 <form action={publishRichMenuAction} className="mt-3">
                   <input type="hidden" name="richMenuId" value={rm.id} />
-                  <Button type="submit" variant="secondary" className="w-full">
-                    このメニューをLINEに出す
+                  <Button
+                    type="submit"
+                    variant={rm.isPublished ? "secondary" : "primary"}
+                    className="w-full"
+                    disabled={!connected}
+                  >
+                    <Icon name="send" className="h-4 w-4" />
+                    {rm.isPublished ? "もう一度出しなおす" : "このメニューを出す"}
                   </Button>
                 </form>
-              </Card>
+              </div>
             );
           })}
         </div>
-      </section>
 
-      <div className="flex gap-3 rounded-card border border-slate-200/80 bg-surface px-4 py-3.5">
-        <Icon name="help" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
-        <div className="text-xs leading-relaxed text-slate-600">
-          <p className="font-bold text-ink">本物のLINEにつなぐには</p>
-          <p className="mt-1">
-            LINE公式アカウントの管理ページで「合いことば」を2つ発行し、この画面の設定に入れるだけです。
-            そのほかに、メニューの背景画像（よこ2500 × たて1686 の絵）を1枚ご用意ください。
-            この作業はこちらで代行できます。
+        {!connected ? (
+          <p className="mt-3 flex items-start gap-1.5 text-2xs leading-relaxed text-slate-500">
+            <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+            先に手順1でLINEとつないでください。つながると押せるようになります。
           </p>
+        ) : null}
+      </SetupStep>
+
+      {/* ---------------- 手順4 ---------------- */}
+      <SetupStep
+        n={4}
+        title="ご予約の画面を、LINEの中で開けるようにする"
+        summary="これを入れると、お客様がLINEを離れずに予約できます。入れなくても、おしらせは届きます。"
+        done={hasLiff}
+        optional
+      >
+        <div className="space-y-4">
+          <CopyField label="LIFFを作るときに使うURL" value={liffUrl} />
+          <Howto
+            steps={[
+              <>
+                LINE Developers で<b>「LIFF」</b>のタブを開き、「追加」を押します
+              </>,
+              <>
+                サイズは<b>「Full」</b>、上のURLを貼り、
+                「scope」は <b>profile</b> と <b>openid</b> にチェックを入れます
+              </>,
+              <>
+                できあがった<b>LIFF ID</b>を写して、手順1の「LIFF ID」の欄に貼り付けます
+              </>,
+            ]}
+          />
+          {hasLiff ? (
+            <p className="inline-flex items-center gap-1.5 text-xs font-bold text-good-700">
+              <Icon name="check" className="h-4 w-4" strokeWidth={2.6} />
+              入っています（{credentials?.liffId}）
+            </p>
+          ) : null}
         </div>
-      </div>
+      </SetupStep>
+
+      {/* ---------------- 届くおしらせ ---------------- */}
+      <section className="pt-2">
+        <SectionTitle hint="つながっていれば、下のできごとに合わせて自動で届きます。個別の設定は要りません">
+          お客様に届くおしらせ
+        </SectionTitle>
+        <Card className="p-0">
+          <ul className="divide-y divide-slate-100">
+            {NOTIFICATIONS.map((n) => (
+              <li key={n.when} className="flex items-center gap-3 px-5 py-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                  <Icon name={n.icon} className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1 text-sm text-slate-700">{n.when}</span>
+                <Icon name="arrowRight" className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                <span className="min-w-0 flex-1 text-sm font-medium text-ink">{n.what}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <p className="mt-2 text-xs leading-relaxed text-slate-500">
+          文面を変えたいときはお知らせください。前日のおしらせを送る時刻は「お店の設定」から変えられます。
+        </p>
+      </section>
     </div>
   );
 }

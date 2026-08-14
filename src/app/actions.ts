@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { DEMO_CUSTOMER_COOKIE, getOwner } from "@/lib/session";
+import { requireStaff } from "@/lib/auth";
 import { getSettings, resolveCancelPolicy, saveSettings } from "@/lib/settings";
 import { addDays, addMinutes, formatRange, jst, now, toDateStr, todayStr } from "@/lib/time";
 import { layoutAdjustment } from "@/lib/availability";
@@ -218,6 +219,7 @@ export async function rescheduleReservation(formData: FormData) {
 
 /** 訪問 ⇄ オンラインの切替 */
 export async function switchDeliveryType(formData: FormData) {
+  await requireStaff();
   const id = String(formData.get("reservationId"));
   const targetMenuId = String(formData.get("targetMenuId"));
 
@@ -262,6 +264,7 @@ export async function switchDeliveryType(formData: FormData) {
 }
 
 export async function completeReservation(formData: FormData) {
+  await requireStaff();
   const id = String(formData.get("reservationId"));
   const paymentStatus = String(formData.get("paymentStatus") ?? "cash_received");
 
@@ -293,6 +296,7 @@ export async function completeReservation(formData: FormData) {
 }
 
 export async function createBlockedSlot(formData: FormData) {
+  await requireStaff();
   const owner = await getOwner();
   const dateStr = String(formData.get("date"));
   const time = String(formData.get("time"));
@@ -371,6 +375,7 @@ export async function skipOccurrence(formData: FormData) {
 }
 
 export async function changeRuleAction(formData: FormData) {
+  await requireStaff();
   const ruleId = String(formData.get("ruleId"));
   const effectiveFrom = String(formData.get("effectiveFrom"));
   const dayOfWeek = Number(formData.get("dayOfWeek"));
@@ -389,6 +394,7 @@ export async function changeRuleAction(formData: FormData) {
 }
 
 export async function pauseRuleAction(formData: FormData) {
+  await requireStaff();
   await pauseRule(
     String(formData.get("ruleId")),
     String(formData.get("from")),
@@ -398,16 +404,19 @@ export async function pauseRuleAction(formData: FormData) {
 }
 
 export async function resumeRuleAction(formData: FormData) {
+  await requireStaff();
   await resumeRule(String(formData.get("ruleId")));
   refresh();
 }
 
 export async function endRuleAction(formData: FormData) {
+  await requireStaff();
   await endRule(String(formData.get("ruleId")), String(formData.get("endDate") || todayStr()));
   refresh();
 }
 
 export async function regenerateRuleAction(formData: FormData) {
+  await requireStaff();
   await generateOccurrences(String(formData.get("ruleId")));
   refresh();
 }
@@ -420,6 +429,7 @@ export async function issueInvoiceAction(
   _prev: InvoiceActionState,
   formData: FormData
 ): Promise<InvoiceActionState> {
+  await requireStaff();
   const customerId = String(formData.get("customerId"));
   const reservationIds = formData.getAll("reservationIds").map(String).filter(Boolean);
   const type = String(formData.get("type") ?? "receipt") as "invoice" | "receipt";
@@ -447,6 +457,7 @@ export async function issueInvoiceAction(
 
 /** PDFを生成し、LINEで送付する */
 export async function sendInvoiceByLineAction(formData: FormData) {
+  await requireStaff();
   const invoiceId = String(formData.get("invoiceId"));
   try {
     await generateInvoicePdf(invoiceId);
@@ -462,11 +473,13 @@ export async function sendInvoiceByLineAction(formData: FormData) {
 }
 
 export async function voidInvoiceAction(formData: FormData) {
+  await requireStaff();
   await voidInvoice(String(formData.get("invoiceId")), String(formData.get("reason") || "理由未入力"));
   refresh();
 }
 
 export async function issueReturnedInvoiceAction(formData: FormData) {
+  await requireStaff();
   const { invoice } = await issueReturnedInvoice(
     String(formData.get("invoiceId")),
     Number(formData.get("amount") ?? 0),
@@ -480,11 +493,13 @@ export async function issueReturnedInvoiceAction(formData: FormData) {
 /* ---------------- Googleカレンダー ---------------- */
 
 export async function syncAllCalendarAction() {
+  await requireStaff();
   await syncAllReservations();
   refresh();
 }
 
 export async function importCalendarAction() {
+  await requireStaff();
   const from = jst(todayStr(), "00:00");
   const to = jst(addDays(todayStr(), 60), "00:00");
   await importPersonalEventsAsBlocks(from, to);
@@ -492,17 +507,20 @@ export async function importCalendarAction() {
 }
 
 export async function retrySyncAction() {
+  await requireStaff();
   await retryFailedSyncs();
   refresh();
 }
 
 export async function driftCheckAction() {
+  await requireStaff();
   await detectAndRepairDrift();
   refresh();
 }
 
 /** デモ用: Google側で予定が消された状況を作る（不整合の検知を試すため） */
 export async function simulateExternalDeleteAction(formData: FormData) {
+  await requireStaff();
   const googleEventId = String(formData.get("googleEventId"));
   await prisma.calendarEvent.updateMany({
     where: { googleEventId },
@@ -513,6 +531,7 @@ export async function simulateExternalDeleteAction(formData: FormData) {
 
 /** デモ用: Google側に私用予定を1件足す（取り込みを試すため） */
 export async function simulatePersonalEventAction(formData: FormData) {
+  await requireStaff();
   const date = String(formData.get("date"));
   const time = String(formData.get("time"));
   const minutes = Number(formData.get("minutes") ?? 90);
@@ -534,6 +553,7 @@ export async function simulatePersonalEventAction(formData: FormData) {
 /* ---------------- LINE ---------------- */
 
 export async function publishRichMenuAction(formData: FormData) {
+  await requireStaff();
   const id = String(formData.get("richMenuId"));
   const menu = await prisma.richMenu.findUniqueOrThrow({ where: { id } });
   const areas = JSON.parse(menu.areas) as { label: string; icon: string; path: string }[];
@@ -562,6 +582,7 @@ export async function publishRichMenuAction(formData: FormData) {
 
 /** デモ用: LINEからのWebhookを疑似的に流し込む */
 export async function simulateWebhookAction(formData: FormData) {
+  await requireStaff();
   const type = String(formData.get("eventType"));
   const lineUserId = String(formData.get("lineUserId"));
   const text = String(formData.get("text") ?? "");
@@ -591,6 +612,7 @@ export async function simulateWebhookAction(formData: FormData) {
 
 /** 前日リマインドのバッチを手動で走らせる */
 export async function runReminderBatchAction() {
+  await requireStaff();
   const target = addDays(todayStr(), 1);
   const from = jst(target, "00:00");
   const to = jst(addDays(target, 1), "00:00");
@@ -605,6 +627,7 @@ export async function runReminderBatchAction() {
 
 /** オンライン開始直前リマインドのバッチ */
 export async function runOnlineReminderBatchAction() {
+  await requireStaff();
   const settings = await getSettings();
   const soon = new Date(now().getTime() + settings.onlineReminderMinutes * 60_000);
 
@@ -638,6 +661,7 @@ export type OcrState = {
 };
 
 export async function ocrReceiptAction(_prev: OcrState, formData: FormData): Promise<OcrState> {
+  await requireStaff();
   const sampleKey = String(formData.get("sampleKey") ?? "homecenter");
   const file = formData.get("file");
 
@@ -664,6 +688,7 @@ export async function ocrReceiptAction(_prev: OcrState, formData: FormData): Pro
 }
 
 export async function createExpenseAction(formData: FormData) {
+  await requireStaff();
   await ensureChartOfAccounts();
 
   const expenseDate = String(formData.get("expenseDate"));
@@ -712,6 +737,7 @@ export async function createExpenseAction(formData: FormData) {
 }
 
 export async function deleteDocumentAction(formData: FormData) {
+  await requireStaff();
   const id = String(formData.get("documentId"));
   const reason = String(formData.get("reason") ?? "");
   const doc = await prisma.document.findUniqueOrThrow({ where: { id } });
@@ -739,6 +765,7 @@ export async function deleteDocumentAction(formData: FormData) {
 /* ---------------- 決算 ---------------- */
 
 export async function runDepreciationAction(formData: FormData) {
+  await requireStaff();
   await ensureChartOfAccounts();
   const fiscalYearId = String(formData.get("fiscalYearId"));
   await runDepreciation(fiscalYearId);
@@ -746,6 +773,7 @@ export async function runDepreciationAction(formData: FormData) {
 }
 
 export async function ensureFiscalYearAction() {
+  await requireStaff();
   await ensureChartOfAccounts();
   await ensureFiscalYear();
   refresh();
@@ -754,6 +782,7 @@ export async function ensureFiscalYearAction() {
 /* ---------------- 設定 ---------------- */
 
 export async function updateSettingsAction(formData: FormData) {
+  await requireStaff();
   const num = (k: string) => Number(formData.get(k));
   await saveSettings({
     issuerName: String(formData.get("issuerName")),
