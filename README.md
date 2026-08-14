@@ -56,8 +56,7 @@ npm run dev     # http://localhost:3000 が立ち上がります
 
 1. <https://vercel.com/new> を開く
 2. `tarokuma555-maker/reservation-system` を選んで **Import**
-3. **Git Branch** を `claude/line-booking-system-k6gy0s` にする（Import画面の Git Repository 欄で変更できます）
-4. 他の設定はそのままで **Deploy**
+3. 設定はすべてそのままで **Deploy**（`main` ブランチがそのまま公開されます）
 
 2〜3分で `https://<プロジェクト名>.vercel.app` が発行されます。
 
