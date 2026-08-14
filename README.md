@@ -24,10 +24,12 @@
 Node.js 20以上が必要です。**認証情報の設定なしでそのまま動きます。**
 
 ```bash
-npm install
-npm run db:reset   # SQLiteのDBを作り、デモデータを投入する
-npm run dev        # http://localhost:3000
+npm install     # 依存関係の取得（Prismaの準備まで自動で走ります）
+npm run setup   # DBを作り、デモデータを投入する
+npm run dev     # http://localhost:3000 が立ち上がります
 ```
+
+うまくいかないときは `npm run db:reset` でデータを作り直せます。
 
 | 入口 | 内容 |
 |---|---|
