@@ -21,7 +21,7 @@ export default async function TaxPage() {
         <Link href="/admin/accounting" className="text-xs text-slate-500 hover:underline">
           ← 帳簿へ戻る
         </Link>
-        <h1 className="mt-1 text-xl font-bold text-ink">消費税の集計</h1>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tighter text-ink">消費税の集計</h1>
         <p className="text-sm text-slate-500">
           {fy.name} ／ 現在の設定: {settings.taxMethod === "kani" ? "簡易課税" : "本則課税"}
         </p>
@@ -38,9 +38,9 @@ export default async function TaxPage() {
           <p className="text-xs text-slate-500">預かった消費税（仮受）</p>
           <p className="mt-1 text-lg font-bold tabular-nums">{formatYen(summary.outputTax)}</p>
         </Card>
-        <Card className="border-sage-300 bg-sage-50">
-          <p className="text-xs text-sage-700">納付見込み額（現在の方式）</p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-sage-700">
+        <Card className="border-brand-700/20 bg-brand-sheen text-white">
+          <p className="text-2xs font-bold tracking-wide text-white/80">納付見込み額（現在の方式）</p>
+          <p className="mt-2 text-2xl font-extrabold tracking-tighter tabular-nums">
             {formatYen(summary.payable)}
           </p>
         </Card>
@@ -50,20 +50,20 @@ export default async function TaxPage() {
         <SectionTitle hint="どちらが有利かの判断は税務判断のため、税理士にご確認ください">
           本則課税と簡易課税の試算
         </SectionTitle>
-        <Card className="overflow-x-auto p-0">
+        <Card className="scroll-x p-0">
           <table className="w-full min-w-[560px] text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
+            <thead className="border-b border-slate-200 bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
               <tr>
-                <th className="px-4 py-2 text-left">項目</th>
-                <th className="px-4 py-2 text-right">本則課税</th>
-                <th className="px-4 py-2 text-right">簡易課税</th>
+                <th className="px-4 py-2.5 text-left">項目</th>
+                <th className="px-4 py-2.5 text-right">本則課税</th>
+                <th className="px-4 py-2.5 text-right">簡易課税</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               <tr>
                 <td className="px-4 py-2">預かった消費税</td>
-                <td className="px-4 py-2 text-right tabular-nums">{formatYen(summary.outputTax)}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{formatYen(summary.outputTax)}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums">{formatYen(summary.outputTax)}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums">{formatYen(summary.outputTax)}</td>
               </tr>
               <tr>
                 <td className="px-4 py-2">
@@ -72,25 +72,25 @@ export default async function TaxPage() {
                     （簡易はみなし仕入率 {summary.deemedPurchaseRate}%）
                   </span>
                 </td>
-                <td className="px-4 py-2 text-right tabular-nums">
+                <td className="px-4 py-2.5 text-right tabular-nums">
                   {formatYen(summary.deductibleInputTax)}
                 </td>
-                <td className="px-4 py-2 text-right tabular-nums">
+                <td className="px-4 py-2.5 text-right tabular-nums">
                   {formatYen(summary.outputTax - summary.kaniPayable)}
                 </td>
               </tr>
               <tr className="border-t border-slate-300 font-bold">
                 <td className="px-4 py-2">納付額</td>
                 <td
-                  className={`px-4 py-2 text-right tabular-nums ${
-                    summary.honsokuPayable <= summary.kaniPayable ? "text-sage-700" : ""
+                  className={`px-4 py-2.5 text-right tabular-nums ${
+                    summary.honsokuPayable <= summary.kaniPayable ? "text-brand-700" : ""
                   }`}
                 >
                   {formatYen(summary.honsokuPayable)}
                 </td>
                 <td
-                  className={`px-4 py-2 text-right tabular-nums ${
-                    summary.kaniPayable < summary.honsokuPayable ? "text-sage-700" : ""
+                  className={`px-4 py-2.5 text-right tabular-nums ${
+                    summary.kaniPayable < summary.honsokuPayable ? "text-brand-700" : ""
                   }`}
                 >
                   {formatYen(summary.kaniPayable)}
@@ -121,7 +121,7 @@ export default async function TaxPage() {
             <tbody className="divide-y divide-slate-100">
               <tr>
                 <td className="px-4 py-2">適格請求書あり（全額控除）</td>
-                <td className="px-4 py-2 text-right tabular-nums">
+                <td className="px-4 py-2.5 text-right tabular-nums">
                   {formatYen(summary.inputTaxQualified)}
                 </td>
               </tr>
@@ -132,7 +132,7 @@ export default async function TaxPage() {
                     （経過措置 {summary.transitionalRate}% を適用）
                   </span>
                 </td>
-                <td className="px-4 py-2 text-right tabular-nums">
+                <td className="px-4 py-2.5 text-right tabular-nums">
                   {formatYen(summary.inputTaxNonQualified)}
                   <span className="ml-2 text-xs text-slate-500">
                     → 控除{" "}
@@ -144,7 +144,7 @@ export default async function TaxPage() {
               </tr>
               <tr className="border-t border-slate-300 font-bold">
                 <td className="px-4 py-2">控除できる合計</td>
-                <td className="px-4 py-2 text-right tabular-nums">
+                <td className="px-4 py-2.5 text-right tabular-nums">
                   {formatYen(summary.deductibleInputTax)}
                 </td>
               </tr>

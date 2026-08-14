@@ -22,7 +22,7 @@ export default function ReceiptScanner({
 
   return (
     <div className="space-y-4">
-      <form action={formAction} className="space-y-3 rounded-xl border border-slate-200 p-4">
+      <form action={formAction} className="space-y-3 rounded-card border border-slate-200/80 p-5">
         <p className="text-sm font-bold text-ink">1. レシートを読み取る</p>
 
         {mode === "mock" ? (
@@ -32,7 +32,7 @@ export default function ReceiptScanner({
               name="sampleKey"
               value={sampleKey}
               onChange={(e) => setSampleKey(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
             >
               {samples.map((s) => (
                 <option key={s.key} value={s.key}>
@@ -49,7 +49,7 @@ export default function ReceiptScanner({
               name="file"
               accept="image/*"
               capture="environment"
-              className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
             />
           </label>
         )}
@@ -57,18 +57,18 @@ export default function ReceiptScanner({
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-lg bg-sage-600 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          className="w-full rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 disabled:opacity-45"
         >
           {pending ? "読み取り中…" : "読み取る"}
         </button>
 
-        {state.error ? <p className="text-sm text-rose-600">{state.error}</p> : null}
+        {state.error ? <p className="text-sm text-bad-600">{state.error}</p> : null}
       </form>
 
       {parsed ? (
         <form
           action={createExpenseAction}
-          className="space-y-3 rounded-xl border border-sage-300 bg-sage-50 p-4"
+          className="space-y-3 rounded-xl border border-brand-200 bg-brand-50 p-4"
         >
           <p className="text-sm font-bold text-ink">2. 読み取り結果を確認して登録する</p>
 
@@ -86,7 +86,7 @@ export default function ReceiptScanner({
               <select
                 name="accountCode"
                 defaultValue={parsed.suggestedAccountCode}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
               >
                 {accounts.map((a) => (
                   <option key={a.code} value={a.code}>
@@ -100,7 +100,7 @@ export default function ReceiptScanner({
               <select
                 name="taxCategory"
                 defaultValue={parsed.taxRate === 8 ? "軽減8" : "課税10"}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
               >
                 <option value="課税10">課税10%</option>
                 <option value="軽減8">軽減8%</option>
@@ -119,7 +119,7 @@ export default function ReceiptScanner({
                       ? "small_amount_exception"
                       : "non_qualified"
                 }
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
               >
                 <option value="qualified">適格請求書あり（全額控除）</option>
                 <option value="non_qualified">適格請求書なし（経過措置）</option>
@@ -135,13 +135,13 @@ export default function ReceiptScanner({
           />
           <input type="hidden" name="ocrRawText" value={parsed.rawText} />
 
-          <div className="rounded-lg bg-white p-3 text-xs leading-relaxed text-slate-600">
+          <div className="rounded-lg bg-surface p-3 text-xs leading-relaxed text-slate-600">
             <p>
               <b>登録番号</b>:{" "}
               {parsed.registrationNumber ? (
-                <span className="text-sage-700">{parsed.registrationNumber}（適格請求書）</span>
+                <span className="text-brand-700">{parsed.registrationNumber}（適格請求書）</span>
               ) : (
-                <span className="text-clay-600">
+                <span className="text-ocean-600">
                   読み取れませんでした
                   {parsed.smallAmountException
                     ? " — 税込1万円未満のため少額特例の対象になり得ます"
@@ -153,7 +153,7 @@ export default function ReceiptScanner({
 
           <details>
             <summary className="cursor-pointer text-xs text-slate-500">読み取った文字列を見る</summary>
-            <pre className="mt-1 max-h-48 overflow-auto rounded bg-slate-900 p-3 text-[10px] leading-relaxed text-slate-100">
+            <pre className="mt-1 max-h-48 overflow-auto rounded-xl bg-slate-900 p-3.5 text-[10px] leading-relaxed text-brand-100">
               {parsed.rawText}
             </pre>
           </details>
@@ -162,11 +162,11 @@ export default function ReceiptScanner({
             メモ
             <input
               name="note"
-              className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
             />
           </label>
 
-          <button className="w-full rounded-lg bg-sage-600 py-2.5 text-sm font-medium text-white">
+          <button className="w-full rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
             経費として登録し、仕訳を起こす
           </button>
         </form>
@@ -193,7 +193,7 @@ function Field({
         name={name}
         type={type}
         defaultValue={defaultValue}
-        className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+        className="mt-1 block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
       />
     </label>
   );

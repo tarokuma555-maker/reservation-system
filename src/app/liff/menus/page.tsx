@@ -42,16 +42,16 @@ export default async function MenusPage({
 
   return (
     <div className="space-y-4 p-4">
-      <h1 className="text-lg font-bold text-ink">メニューを選ぶ</h1>
+      <h1 className="text-lg font-bold tracking-tight text-ink">メニューを選ぶ</h1>
 
       <div className="flex gap-2">
         <FilterTab href="/liff/menus" label="すべて" active={!type} />
-        <FilterTab href="/liff/menus?type=visit" label="🏠 訪問" active={type === "visit"} />
-        <FilterTab href="/liff/menus?type=online" label="💻 オンライン" active={type === "online"} />
+        <FilterTab href="/liff/menus?type=visit" label="訪問" active={type === "visit"} />
+        <FilterTab href="/liff/menus?type=online" label="オンライン" active={type === "online"} />
       </div>
 
       {!canVisit ? (
-        <div className="rounded-xl border border-clay-500/30 bg-clay-100 p-3 text-xs leading-relaxed text-clay-600">
+        <div className="rounded-xl border border-ocean-500/30 bg-ocean-100 p-3 text-xs leading-relaxed text-ocean-600">
           <b>ご登録のご住所は訪問エリア外です。</b>
           <br />
           対応エリア: {settings.serviceAreas.join("・")}
@@ -70,13 +70,11 @@ export default async function MenusPage({
                 <div
                   key={m.id}
                   className={`rounded-2xl border p-4 shadow-sm ${
-                    blocked ? "border-slate-200 bg-slate-50 opacity-70" : "border-slate-200 bg-white"
+                    blocked ? "border-slate-200 bg-slate-50 opacity-70" : "border-slate-200 bg-surface"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-bold text-ink">{m.name}</h3>
-                    <DeliveryBadge type={m.deliveryType} />
-                  </div>
+                  <DeliveryBadge type={m.deliveryType} />
+                  <h3 className="mt-2 font-bold leading-snug tracking-tight text-ink">{m.name}</h3>
                   <p className="mt-1 text-xs leading-relaxed text-slate-600">{m.description}</p>
                   <div className="mt-2 flex items-center justify-between">
                     <p className="text-sm text-slate-600">
@@ -89,14 +87,14 @@ export default async function MenusPage({
                     ) : (
                       <Link
                         href={`/liff/book/${m.id}`}
-                        className="rounded-lg bg-sage-600 px-3 py-1.5 text-sm font-medium text-white"
+                        className="rounded-pill bg-brand-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-card transition hover:bg-brand-700"
                       >
                         選ぶ
                       </Link>
                     )}
                   </div>
                   {m.isFirstTimeOnly ? (
-                    <p className="mt-2 text-[11px] text-clay-600">※ はじめての方限定のプランです</p>
+                    <p className="mt-2 text-2xs text-ocean-600">※ はじめての方限定のプランです</p>
                   ) : null}
                 </div>
               );
@@ -107,7 +105,7 @@ export default async function MenusPage({
 
       <p className="pt-2 text-center text-xs text-slate-500">
         定期でのご利用をご希望の方は{" "}
-        <Link href="/liff/recurring/new" className="text-sage-600 underline">
+        <Link href="/liff/recurring/new" className="text-brand-600 underline">
           定期利用の申込み
         </Link>{" "}
         へ
@@ -121,7 +119,7 @@ function FilterTab({ href, label, active }: { href: string; label: string; activ
     <Link
       href={href}
       className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-        active ? "bg-sage-600 text-white" : "border border-slate-300 bg-white text-slate-600"
+        active ? "bg-brand-600 text-white" : "border border-slate-300 bg-surface text-slate-600"
       }`}
     >
       {label}

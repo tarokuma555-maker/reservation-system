@@ -64,32 +64,32 @@ export default async function CalendarPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-ink">スケジュール</h1>
+          <h1 className="text-2xl font-extrabold tracking-tighter text-ink">スケジュール</h1>
           <p className="text-sm text-slate-500">
             {days[0]} 〜 {days[6]}
           </p>
         </div>
         <div className="flex gap-2 text-sm">
-          <Link href={`/admin/calendar?w=${weekOffset - 1}`} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5">
+          <Link href={`/admin/calendar?w=${weekOffset - 1}`} className="rounded-lg border border-slate-300 bg-surface px-3 py-1.5">
             ← 前の週
           </Link>
-          <Link href="/admin/calendar" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5">
+          <Link href="/admin/calendar" className="rounded-lg border border-slate-300 bg-surface px-3 py-1.5">
             今週
           </Link>
-          <Link href={`/admin/calendar?w=${weekOffset + 1}`} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5">
+          <Link href={`/admin/calendar?w=${weekOffset + 1}`} className="rounded-lg border border-slate-300 bg-surface px-3 py-1.5">
             次の週 →
           </Link>
         </div>
       </header>
 
       <div className="flex flex-wrap gap-3 text-xs text-slate-600">
-        <Legend className="bg-sage-500" label="訪問" />
-        <Legend className="bg-clay-500" label="オンライン" />
-        <Legend className="bg-slate-400" label="ブロック枠（私用・Google連携）" />
-        <Legend className="bg-slate-300" label="実施済" />
+        <Legend className="bg-brand-500" label="訪問" />
+        <Legend className="bg-ocean-500" label="オンライン" />
+        <Legend className="border border-slate-300 bg-slate-200" label="ブロック枠（私用・Google連携）" />
+        <Legend className="border border-slate-300 bg-surface" label="実施済" />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-surface">
         <div className="min-w-[860px]">
           {/* 日付ヘッダー */}
           <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-slate-200">
@@ -101,11 +101,11 @@ export default async function CalendarPage({
                 <div
                   key={d}
                   className={`border-l border-slate-100 px-2 py-2 text-center text-xs ${
-                    isToday ? "bg-sage-50 font-bold text-sage-700" : "text-slate-600"
+                    isToday ? "bg-brand-50 font-bold text-brand-700" : "text-slate-600"
                   }`}
                 >
                   {Number(d.slice(8))}日({WEEKDAY_LABELS[dayOfWeekOfDateStr(d)]})
-                  {isHoliday ? <span className="ml-1 text-rose-500">休</span> : null}
+                  {isHoliday ? <span className="ml-1 text-bad-500">休</span> : null}
                 </div>
               );
             })}
@@ -138,8 +138,13 @@ export default async function CalendarPage({
                     return (
                       <div
                         key={b.id}
-                        style={{ top, height }}
-                        className="absolute inset-x-1 overflow-hidden rounded bg-slate-400 px-1 py-0.5 text-[10px] leading-tight text-white"
+                        className="absolute inset-x-1 overflow-hidden rounded-lg border border-slate-300 px-1.5 py-1 text-[10px] font-medium leading-tight text-slate-600"
+                        style={{
+                          top,
+                          height,
+                          backgroundImage:
+                            "repeating-linear-gradient(45deg, #EADCD0 0 6px, #F5EDE5 6px 12px)",
+                        }}
                         title={b.title}
                       >
                         {b.title}
@@ -153,20 +158,20 @@ export default async function CalendarPage({
                     const { top, height } = posOf(r.startAt, r.endAt);
                     const color =
                       r.status === "completed"
-                        ? "bg-slate-300 text-slate-700"
+                        ? "border border-slate-300 bg-surface text-slate-500"
                         : r.deliveryType === "visit"
-                          ? "bg-sage-500 text-white"
-                          : "bg-clay-500 text-white";
+                          ? "bg-brand-500 text-white"
+                          : "bg-ocean-500 text-white";
                     return (
                       <Link
                         key={r.id}
                         href={`/admin/reservations/${r.id}`}
                         style={{ top, height }}
-                        className={`absolute inset-x-1 overflow-hidden rounded px-1 py-0.5 text-[10px] leading-tight ${color}`}
+                        className={`absolute inset-x-1 overflow-hidden rounded-lg px-1.5 py-1 text-[10px] leading-tight shadow-sm ${color}`}
                         title={`${r.customer.name} / ${r.menu.name}`}
                       >
                         <span className="block font-bold">
-                          {r.deliveryType === "visit" ? "🏠" : "💻"} {toTimeStr(r.startAt)}
+                          {toTimeStr(r.startAt)}
                         </span>
                         <span className="block truncate">{r.customer.name}</span>
                         {r.recurringRuleId ? <span className="block opacity-80">定期</span> : null}
@@ -191,7 +196,7 @@ export default async function CalendarPage({
                 type="date"
                 name="date"
                 defaultValue={today}
-                className="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
             <label className="text-xs text-slate-500">
@@ -201,7 +206,7 @@ export default async function CalendarPage({
                 name="time"
                 defaultValue="13:00"
                 step={1800}
-                className="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
             <label className="text-xs text-slate-500">
@@ -212,7 +217,7 @@ export default async function CalendarPage({
                 defaultValue={60}
                 step={30}
                 min={30}
-                className="mt-1 block w-24 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block w-24 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
             <label className="min-w-[160px] flex-1 text-xs text-slate-500">
@@ -220,10 +225,10 @@ export default async function CalendarPage({
               <input
                 name="title"
                 placeholder="通院・学校行事など"
-                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
-            <button className="rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
               追加
             </button>
           </form>

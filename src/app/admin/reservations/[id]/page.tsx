@@ -52,7 +52,7 @@ export default async function AdminReservationDetail({
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-ink">
+          <h1 className="text-2xl font-extrabold tracking-tighter text-ink">
             {reservation.customer.name} 様
             {reservation.customer.companyName ? `（${reservation.customer.companyName}）` : ""}
           </h1>
@@ -99,7 +99,7 @@ export default async function AdminReservationDetail({
             {reservation.recurringRule ? (
               <Link
                 href={`/admin/recurring/${reservation.recurringRuleId}`}
-                className="mt-3 inline-block text-xs text-sage-600 underline"
+                className="mt-3 inline-block text-xs text-brand-600 underline"
               >
                 この定期ルールを開く →
               </Link>
@@ -131,7 +131,7 @@ export default async function AdminReservationDetail({
                   <input type="hidden" name="reservationId" value={reservation.id} />
                   <select
                     name="targetMenuId"
-                    className="min-w-[220px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className="min-w-[220px] flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
                   >
                     {alternativeMenus.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -139,7 +139,7 @@ export default async function AdminReservationDetail({
                       </option>
                     ))}
                   </select>
-                  <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm">
+                  <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
                     {reservation.deliveryType === "visit" ? "オンラインに変更" : "訪問に変更"}
                   </button>
                 </form>
@@ -151,13 +151,13 @@ export default async function AdminReservationDetail({
                   <input type="hidden" name="reservationId" value={reservation.id} />
                   <select
                     name="paymentStatus"
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className="rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
                   >
                     <option value="cash_received">現金を受領した</option>
                     <option value="transfer_confirmed">振込を確認した</option>
                     <option value="unpaid">まだ入金なし</option>
                   </select>
-                  <button className="rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white">
+                  <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
                     実施済みにする
                   </button>
                 </form>
@@ -174,16 +174,16 @@ export default async function AdminReservationDetail({
                   <input
                     name="reason"
                     placeholder="理由"
-                    className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className="min-w-[160px] flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
                   />
-                  <button className="rounded-lg border border-rose-300 px-4 py-2 text-sm text-rose-600">
+                  <button className="rounded-pill border border-bad-100 bg-surface px-4 py-2.5 text-sm font-bold text-bad-600 transition hover:bg-bad-50">
                     キャンセルする
                   </button>
                 </form>
                 {reservation.recurringRuleId ? (
                   <form action={skipOccurrence} className="mt-2">
                     <input type="hidden" name="reservationId" value={reservation.id} />
-                    <button className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                    <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300">
                       この回だけスキップ（ルールは継続）
                     </button>
                   </form>
@@ -198,7 +198,7 @@ export default async function AdminReservationDetail({
               <ul className="space-y-1 text-sm">
                 {reservation.invoiceLines.map((l) => (
                   <li key={l.id}>
-                    <Link href={`/admin/invoices/${l.invoiceId}`} className="text-sage-600 underline">
+                    <Link href={`/admin/invoices/${l.invoiceId}`} className="text-brand-600 underline">
                       {l.invoice.invoiceNumber}（{l.invoice.issueDate}）
                     </Link>
                   </li>

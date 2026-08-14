@@ -22,8 +22,8 @@ export default async function BookPage({ params }: { params: Promise<{ menuId: s
   if (!isServiceableArea(settings, menu.deliveryType as "visit" | "online", customer.address)) {
     return (
       <div className="space-y-3 p-4">
-        <h1 className="text-lg font-bold text-ink">{menu.name}</h1>
-        <div className="rounded-xl border border-clay-500/30 bg-clay-100 p-4 text-sm leading-relaxed text-clay-600">
+        <h1 className="text-lg font-bold tracking-tight text-ink">{menu.name}</h1>
+        <div className="rounded-xl border border-ocean-500/30 bg-ocean-100 p-4 text-sm leading-relaxed text-ocean-600">
           恐れ入りますが、ご登録のご住所は訪問対応エリア外です。
           <br />
           オンラインの片付けコンサルは全国どこからでもご利用いただけます。
@@ -50,14 +50,14 @@ export default async function BookPage({ params }: { params: Promise<{ menuId: s
     <div className="space-y-5 p-4">
       <div>
         <div className="flex items-start justify-between gap-2">
-          <h1 className="text-lg font-bold text-ink">{menu.name}</h1>
+          <h1 className="text-lg font-bold tracking-tight text-ink">{menu.name}</h1>
           <DeliveryBadge type={menu.deliveryType} />
         </div>
         <p className="mt-1 text-xs leading-relaxed text-slate-600">{menu.description}</p>
       </div>
 
       {needsAddress ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+        <div className="rounded-xl border border-warn-100 bg-warn-50 p-3 text-xs text-warn-700">
           訪問のご予約にはご住所が必要です。デモではお客様を切り替えてお試しください。
         </div>
       ) : (

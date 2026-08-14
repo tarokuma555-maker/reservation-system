@@ -85,7 +85,7 @@ export default function BookingForm({ customerId, menu, options, dates, dateLabe
                 <label
                   key={o.id}
                   className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 text-sm ${
-                    checked ? "border-sage-500 bg-sage-50" : "border-slate-200 bg-white"
+                    checked ? "border-brand-500 bg-brand-50" : "border-slate-200 bg-surface"
                   }`}
                 >
                   <span className="flex items-center gap-2">
@@ -121,8 +121,8 @@ export default function BookingForm({ customerId, menu, options, dates, dateLabe
               onClick={() => setDate(d)}
               className={`min-w-[68px] shrink-0 rounded-xl border px-3 py-2 text-center text-xs ${
                 date === d
-                  ? "border-sage-600 bg-sage-600 text-white"
-                  : "border-slate-200 bg-white text-slate-700"
+                  ? "border-brand-600 bg-brand-600 text-white"
+                  : "border-slate-200 bg-surface text-slate-700"
               }`}
             >
               {dateLabels[i]}
@@ -135,7 +135,7 @@ export default function BookingForm({ customerId, menu, options, dates, dateLabe
         <h2 className="mb-2 text-sm font-bold text-ink">
           時間を選ぶ
           {data && data.layoutAdjustMinutes > 0 ? (
-            <span className="ml-2 text-[11px] font-normal text-clay-600">
+            <span className="ml-2 text-2xs font-normal text-ocean-600">
               ※お部屋の広さに合わせて +{data.layoutAdjustMinutes}分
             </span>
           ) : null}
@@ -161,8 +161,8 @@ export default function BookingForm({ customerId, menu, options, dates, dateLabe
                     !s.available
                       ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
                       : time === s.time
-                        ? "border-sage-600 bg-sage-600 font-bold text-white"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-sage-400"
+                        ? "border-brand-600 bg-brand-600 font-bold text-white"
+                        : "border-slate-200 bg-surface text-slate-700 hover:border-brand-300"
                   }`}
                 >
                   {s.time}
@@ -186,11 +186,11 @@ export default function BookingForm({ customerId, menu, options, dates, dateLabe
           onChange={(e) => setNote(e.target.value)}
           rows={3}
           placeholder="重点的にお掃除してほしい場所、当日の注意点など"
-          className="w-full rounded-xl border border-slate-200 p-3 text-sm"
+          className="w-full rounded-xl border border-slate-200 p-3.5 text-sm"
         />
       </section>
 
-      <section className="rounded-2xl bg-slate-50 p-4 text-sm">
+      <section className="rounded-card bg-brand-50/60 p-5 text-sm">
         <h2 className="mb-2 font-bold text-ink">ご予約内容</h2>
         <dl className="space-y-1 text-slate-700">
           <Row label="メニュー" value={menu.name} />
@@ -199,7 +199,7 @@ export default function BookingForm({ customerId, menu, options, dates, dateLabe
           <Row label="所要時間" value={`約${totalMinutes}分`} />
           <Row label="合計金額" value={`${yen(totalPrice)}（税込）`} />
         </dl>
-        <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+        <p className="mt-3 text-2xs leading-relaxed text-slate-500">
           48時間前まではキャンセル無料です。24〜48時間前のキャンセルは50%、
           24時間前以降はお問い合わせをお願いします。
         </p>
@@ -208,7 +208,7 @@ export default function BookingForm({ customerId, menu, options, dates, dateLabe
       <button
         type="submit"
         disabled={!time || pending}
-        className="w-full rounded-xl bg-sage-600 py-3 text-sm font-bold text-white disabled:bg-slate-300"
+        className="w-full rounded-pill bg-brand-600 py-3.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 disabled:bg-slate-300 disabled:shadow-none"
       >
         {pending ? "送信中…" : time ? "この内容で予約する" : "日時を選んでください"}
       </button>

@@ -15,9 +15,9 @@ import {
 export const dynamic = "force-dynamic";
 
 const SYNC_LABEL: Record<string, { label: string; cls: string }> = {
-  synced: { label: "同期済", cls: "bg-sage-500 text-white" },
-  pending: { label: "未同期", cls: "bg-amber-100 text-amber-700" },
-  failed: { label: "失敗", cls: "bg-rose-100 text-rose-700" },
+  synced: { label: "同期済", cls: "bg-good-600 text-white" },
+  pending: { label: "未同期", cls: "bg-warn-100 text-warn-700" },
+  failed: { label: "失敗", cls: "bg-bad-100 text-bad-700" },
   deleted: { label: "削除済", cls: "bg-slate-200 text-slate-600" },
 };
 
@@ -44,7 +44,7 @@ export default async function CalendarSyncPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-xl font-bold text-ink">Googleカレンダー同期</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">Googleカレンダー同期</h1>
         <p className="text-sm text-slate-500">
           予約の正はこのシステム。Googleカレンダーはミラーであり、私用予定の取り込み口です。
         </p>
@@ -53,8 +53,8 @@ export default async function CalendarSyncPage() {
       <div
         className={`rounded-lg border px-4 py-3 text-sm ${
           live
-            ? "border-sage-300 bg-sage-50 text-sage-700"
-            : "border-amber-200 bg-amber-50 text-amber-800"
+            ? "border-good-100 bg-good-50 text-good-700"
+            : "border-warn-100 bg-warn-50 text-warn-700"
         }`}
       >
         <p className="font-bold">
@@ -75,23 +75,23 @@ export default async function CalendarSyncPage() {
         <SectionTitle>同期の操作</SectionTitle>
         <Card className="flex flex-wrap gap-3">
           <form action={syncAllCalendarAction}>
-            <button className="rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
               すべての予約を書き出す
             </button>
           </form>
           <form action={importCalendarAction}>
-            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm">
+            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
               私用予定を取り込む（ブロック枠にする）
             </button>
           </form>
           <form action={driftCheckAction}>
-            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm">
+            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
               不整合を検知して復元する
             </button>
           </form>
           {failedCount > 0 ? (
             <form action={retrySyncAction}>
-              <button className="rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm text-rose-600">
+              <button className="rounded-lg border border-bad-100 bg-surface px-4 py-2 text-sm text-bad-600">
                 失敗した同期をやり直す（{failedCount}件）
               </button>
             </form>
@@ -114,7 +114,7 @@ export default async function CalendarSyncPage() {
                     <p className="text-sm font-medium text-ink">
                       {e.summary}
                       {e.isDeleted ? (
-                        <span className="ml-2 text-xs text-rose-600">Google側で削除済み</span>
+                        <span className="ml-2 text-xs text-bad-600">Google側で削除済み</span>
                       ) : null}
                     </p>
                     <p className="text-xs text-slate-500">{formatRange(e.startAt, e.endAt)}</p>
@@ -122,9 +122,9 @@ export default async function CalendarSyncPage() {
                       <p className="text-xs text-slate-500">場所: {e.location}</p>
                     ) : null}
                     {e.conferenceUrl ? (
-                      <p className="text-xs text-clay-600">Meet: {e.conferenceUrl}</p>
+                      <p className="text-xs text-ocean-600">Meet: {e.conferenceUrl}</p>
                     ) : null}
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    <p className="mt-1 text-2xs text-slate-400">
                       {e.source === "system"
                         ? `extendedProperties.private.reservationId = ${e.privateReservationId}`
                         : "私用予定（システムが作ったものではない）"}
@@ -133,7 +133,7 @@ export default async function CalendarSyncPage() {
                   {e.source === "system" && !e.isDeleted ? (
                     <form action={simulateExternalDeleteAction}>
                       <input type="hidden" name="googleEventId" value={e.googleEventId} />
-                      <button className="shrink-0 rounded border border-slate-300 px-2 py-1 text-[11px] text-slate-600">
+                      <button className="shrink-0 rounded-pill border border-slate-200 bg-surface px-2.5 py-1 text-2xs font-bold text-slate-600 transition hover:border-brand-300">
                         Google側で消してみる
                       </button>
                     </form>
@@ -161,7 +161,7 @@ export default async function CalendarSyncPage() {
                 type="date"
                 name="date"
                 defaultValue={addDays(todayStr(), 3)}
-                className="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
             <label className="text-xs text-slate-500">
@@ -171,7 +171,7 @@ export default async function CalendarSyncPage() {
                 name="time"
                 defaultValue="13:00"
                 step={1800}
-                className="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
             <label className="text-xs text-slate-500">
@@ -181,7 +181,7 @@ export default async function CalendarSyncPage() {
                 name="minutes"
                 defaultValue={90}
                 step={30}
-                className="mt-1 block w-24 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block w-24 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
             <label className="min-w-[160px] flex-1 text-xs text-slate-500">
@@ -189,10 +189,10 @@ export default async function CalendarSyncPage() {
               <input
                 name="summary"
                 placeholder="通院"
-                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
-            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm">
+            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
               Google側に追加
             </button>
           </form>
@@ -223,15 +223,15 @@ export default async function CalendarSyncPage() {
         {syncs.length === 0 ? (
           <Empty>同期の記録はありません</Empty>
         ) : (
-          <Card className="overflow-x-auto p-0">
+          <Card className="scroll-x p-0">
             <table className="w-full min-w-[720px] text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
+              <thead className="border-b border-slate-200 bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
                 <tr>
-                  <th className="px-4 py-2 text-left">予約</th>
-                  <th className="px-4 py-2 text-left">状態</th>
-                  <th className="px-4 py-2 text-left">イベントID</th>
-                  <th className="px-4 py-2 text-right">リトライ</th>
-                  <th className="px-4 py-2 text-left">最終同期</th>
+                  <th className="px-4 py-2.5 text-left">予約</th>
+                  <th className="px-4 py-2.5 text-left">状態</th>
+                  <th className="px-4 py-2.5 text-left">イベントID</th>
+                  <th className="px-4 py-2.5 text-right">リトライ</th>
+                  <th className="px-4 py-2.5 text-left">最終同期</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -244,7 +244,7 @@ export default async function CalendarSyncPage() {
                         {r ? (
                           <Link
                             href={`/admin/reservations/${r.id}`}
-                            className="text-sage-600 hover:underline"
+                            className="text-brand-600 hover:underline"
                           >
                             {r.customer.name} 様 / {r.menu.name}
                           </Link>
@@ -253,15 +253,15 @@ export default async function CalendarSyncPage() {
                         )}
                       </td>
                       <td className="px-4 py-2">
-                        <span className={`rounded px-2 py-0.5 text-[11px] ${label.cls}`}>
+                        <span className={`rounded px-2 py-0.5 text-2xs ${label.cls}`}>
                           {label.label}
                         </span>
                         {s.lastError ? (
-                          <p className="mt-1 text-[11px] text-rose-600">{s.lastError}</p>
+                          <p className="mt-1 text-2xs text-bad-600">{s.lastError}</p>
                         ) : null}
                       </td>
                       <td className="px-4 py-2 text-xs text-slate-500">{s.googleEventId ?? "-"}</td>
-                      <td className="px-4 py-2 text-right tabular-nums">{s.retryCount}</td>
+                      <td className="px-4 py-2.5 text-right tabular-nums">{s.retryCount}</td>
                       <td className="px-4 py-2 text-xs text-slate-500">
                         {s.lastSyncedAt
                           ? s.lastSyncedAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })

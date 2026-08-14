@@ -17,7 +17,7 @@ export default async function CustomersPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-bold text-ink">顧客</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">顧客</h1>
         <p className="text-sm text-slate-500">{customers.length}名</p>
       </header>
 
@@ -45,7 +45,7 @@ export default async function CustomersPage() {
                         {c.layout ? `（${c.layout}）` : ""}
                       </>
                     ) : (
-                      <span className="text-clay-600">
+                      <span className="text-ocean-600">
                         住所の登録なし（オンラインのみのお客様）
                       </span>
                     )}
@@ -59,13 +59,13 @@ export default async function CustomersPage() {
                     {tags.map((t) => (
                       <span
                         key={t}
-                        className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600"
+                        className="rounded-full bg-slate-100 px-2 py-0.5 text-2xs text-slate-600"
                       >
                         {t}
                       </span>
                     ))}
                     {c.recurringRules.length > 0 ? (
-                      <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[11px] text-sage-700">
+                      <span className="rounded-full bg-brand-100 px-2 py-0.5 text-2xs text-brand-700">
                         定期 {c.recurringRules.length}件
                       </span>
                     ) : null}

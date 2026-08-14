@@ -30,9 +30,9 @@ export default async function TalkPage() {
   });
 
   return (
-    <div className="min-h-[70vh] space-y-4 bg-[#8CA5AB] p-4">
+    <div className="min-h-[70vh] space-y-4 bg-brand-50 p-4">
       {lineMode() === "mock" ? (
-        <p className="rounded-lg bg-white/80 px-3 py-2 text-[11px] leading-relaxed text-slate-700">
+        <p className="rounded-card border border-slate-200/80 bg-surface px-3.5 py-2.5 text-2xs leading-relaxed text-slate-600 shadow-card">
           モックモードで動いています。実際のLINEには送信していませんが、
           <b>ここに出ている内容がそのままお客様に届きます</b>（同じJSONをMessaging APIへ送ります）。
         </p>
@@ -43,7 +43,7 @@ export default async function TalkPage() {
       ) : (
         messages.map((m) => (
           <div key={m.id} className="space-y-1">
-            <p className="text-[10px] text-white/90">
+            <p className="px-1 text-[10px] font-bold text-slate-500">
               {TYPE_LABEL[m.type] ?? m.type} ・{" "}
               {m.createdAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
               {m.status === "failed" ? " ・送信失敗" : ""}

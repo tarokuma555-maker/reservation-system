@@ -10,7 +10,7 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-bold text-ink">設定</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">設定</h1>
         <p className="text-sm text-slate-500">
           決まっていない項目は仮置きのままで動きます。決まり次第ここで差し替えてください。
         </p>
@@ -161,7 +161,7 @@ export default async function SettingsPage() {
         </Card>
 
         <div className="flex justify-end">
-          <button className="rounded-lg bg-sage-600 px-6 py-2.5 text-sm font-bold text-white">
+          <button className="rounded-pill bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
             設定を保存する
           </button>
         </div>
@@ -208,9 +208,9 @@ function Field({
         name={name}
         type={type}
         defaultValue={defaultValue}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
       />
-      {hint ? <span className="mt-1 block text-[11px] text-slate-500">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-2xs text-slate-500">{hint}</span> : null}
     </label>
   );
 }
@@ -234,7 +234,7 @@ function Select({
       <select
         name={name}
         defaultValue={defaultValue}
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -242,7 +242,7 @@ function Select({
           </option>
         ))}
       </select>
-      {hint ? <span className="mt-1 block text-[11px] text-slate-500">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-2xs text-slate-500">{hint}</span> : null}
     </label>
   );
 }

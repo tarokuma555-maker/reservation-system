@@ -30,14 +30,14 @@ export default async function ReservationsPage() {
   return (
     <div className="space-y-6 p-4">
       <section>
-        <h1 className="mb-3 text-lg font-bold text-ink">今後のご予約</h1>
+        <h1 className="mb-3 text-lg font-bold tracking-tight text-ink">今後のご予約</h1>
         {upcoming.length === 0 ? (
           <Empty>今後のご予約はありません</Empty>
         ) : (
           <div className="space-y-3">
             {upcoming.map((r) => (
               <Link key={r.id} href={`/liff/reservations/${r.id}`} className="block">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-sage-400">
+                <div className="rounded-card border border-slate-200/80 bg-surface p-5 shadow-card hover:border-brand-300">
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-bold text-ink">{formatRange(r.startAt, r.endAt)}</p>
                     <DeliveryBadge type={r.deliveryType} />
@@ -46,7 +46,7 @@ export default async function ReservationsPage() {
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span className="text-slate-500">{formatYen(r.totalPrice)}（税込）</span>
                     {r.recurringRuleId ? (
-                      <span className="rounded bg-sage-50 px-2 py-0.5 text-sage-700">定期</span>
+                      <span className="rounded bg-brand-50 px-2 py-0.5 text-brand-700">定期</span>
                     ) : null}
                   </div>
                 </div>
@@ -64,7 +64,7 @@ export default async function ReservationsPage() {
           <div className="space-y-2">
             {past.map((r) => (
               <Link key={r.id} href={`/liff/reservations/${r.id}`} className="block">
-                <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-surface px-3 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm text-slate-700">
                       {formatRange(r.startAt, r.endAt)}

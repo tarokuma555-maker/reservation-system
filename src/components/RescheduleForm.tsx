@@ -47,7 +47,7 @@ export default function RescheduleForm({ reservationId, menuId, dates, dateLabel
             type="button"
             onClick={() => setDate(d)}
             className={`min-w-[64px] shrink-0 rounded-lg border px-2 py-1.5 text-xs ${
-              date === d ? "border-sage-600 bg-sage-600 text-white" : "border-slate-200 bg-white"
+              date === d ? "border-brand-600 bg-brand-600 text-white" : "border-slate-200 bg-surface"
             }`}
           >
             {dateLabels[i]}
@@ -72,8 +72,8 @@ export default function RescheduleForm({ reservationId, menuId, dates, dateLabel
                 !s.available
                   ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
                   : time === s.time
-                    ? "border-sage-600 bg-sage-600 font-bold text-white"
-                    : "border-slate-200 bg-white"
+                    ? "border-brand-600 bg-brand-600 font-bold text-white"
+                    : "border-slate-200 bg-surface"
               }`}
             >
               {s.time}
@@ -85,7 +85,7 @@ export default function RescheduleForm({ reservationId, menuId, dates, dateLabel
       <button
         type="submit"
         disabled={!time || pending}
-        className="w-full rounded-lg bg-sage-600 py-2 text-sm font-medium text-white disabled:bg-slate-300"
+        className="w-full rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 disabled:bg-slate-300 disabled:shadow-none"
       >
         {pending ? "変更中…" : "この日時に変更する"}
       </button>

@@ -26,13 +26,13 @@ export default async function InvoiceView({ params }: { params: Promise<{ id: st
             href={`/api/invoices/${id}/pdf`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+            className="rounded-pill border border-slate-200 bg-surface px-3.5 py-1.5 text-xs font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700"
           >
             PDFをダウンロード
           </a>
           <form action={sendInvoiceByLineAction}>
             <input type="hidden" name="invoiceId" value={id} />
-            <button className="rounded-lg bg-sage-600 px-3 py-1.5 text-sm font-medium text-white">
+            <button className="rounded-pill bg-brand-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-card transition hover:bg-brand-700">
               LINEで送る
             </button>
           </form>
@@ -40,7 +40,7 @@ export default async function InvoiceView({ params }: { params: Promise<{ id: st
       </div>
 
       {invoice.sentAt ? (
-        <p className="no-print rounded-lg border border-sage-300 bg-sage-50 px-3 py-2 text-xs text-sage-700">
+        <p className="no-print rounded-xl border border-good-100 bg-good-50 px-3.5 py-2.5 text-2xs font-medium text-good-700">
           {invoice.customer.name} 様へ送付済み（
           {invoice.sentAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })} ／ {invoice.sentVia}）
         </p>
@@ -50,7 +50,7 @@ export default async function InvoiceView({ params }: { params: Promise<{ id: st
         <InvoiceDocument {...doc} />
       </div>
 
-      <div className="no-print rounded-xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-600">
+      <div className="no-print rounded-card border border-slate-200/80 bg-surface p-5 text-xs leading-relaxed text-slate-600">
         <p className="font-bold text-slate-700">法定6項目の対応箇所</p>
         <ol className="mt-1 list-decimal space-y-0.5 pl-5">
           <li>発行事業者の名称および登録番号 → 右上の事業者欄</li>

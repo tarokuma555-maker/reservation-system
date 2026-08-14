@@ -10,7 +10,7 @@ export function FlexPreview({ payload }: { payload: string }) {
   try {
     parsed = JSON.parse(payload);
   } catch {
-    return <p className="text-xs text-rose-600">メッセージの内容を読み取れませんでした</p>;
+    return <p className="text-xs text-bad-600">メッセージの内容を読み取れませんでした</p>;
   }
 
   return (
@@ -25,7 +25,7 @@ export function FlexPreview({ payload }: { payload: string }) {
 function MessageBubble({ message }: { message: AnyObj }) {
   if (message.type === "text") {
     return (
-      <div className="max-w-[280px] whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-sm text-slate-800 shadow-sm ring-1 ring-slate-200">
+      <div className="max-w-[280px] whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-surface px-3.5 py-2.5 text-sm leading-relaxed text-slate-700 shadow-card ring-1 ring-slate-200/70">
         {String(message.text ?? "")}
       </div>
     );
@@ -40,15 +40,15 @@ function MessageBubble({ message }: { message: AnyObj }) {
     const headerContents = (header?.contents ?? []) as AnyObj[];
     const title = String(headerContents[0]?.text ?? "");
     const subtitle = headerContents[1] ? String(headerContents[1].text ?? "") : "";
-    const bg = String(header?.backgroundColor ?? "#47705F");
+    const bg = String(header?.backgroundColor ?? "#D2500F");
 
     const bodyContents = (body?.contents ?? []) as AnyObj[];
 
     return (
-      <div className="max-w-[300px] overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="max-w-[300px] overflow-hidden rounded-2xl bg-surface shadow-card ring-1 ring-slate-200/70">
         <div style={{ backgroundColor: bg }} className="px-4 py-3 text-white">
           <p className="text-sm font-bold">{title}</p>
-          {subtitle ? <p className="text-[11px] opacity-90">{subtitle}</p> : null}
+          {subtitle ? <p className="text-2xs opacity-90">{subtitle}</p> : null}
         </div>
         <div className="space-y-1.5 px-4 py-3">
           {bodyContents.map((c, i) => {
@@ -64,7 +64,7 @@ function MessageBubble({ message }: { message: AnyObj }) {
               );
             }
             return (
-              <div key={i} className="rounded-md bg-slate-50 px-2.5 py-2 text-[11px] text-slate-600">
+              <div key={i} className="rounded-lg bg-brand-50 px-2.5 py-2 text-2xs leading-relaxed text-slate-600">
                 {String(contents[0]?.text ?? "")}
               </div>
             );
@@ -77,8 +77,8 @@ function MessageBubble({ message }: { message: AnyObj }) {
               return (
                 <div
                   key={i}
-                  style={{ backgroundColor: String(b.color ?? "#47705F") }}
-                  className="rounded-md py-2 text-center text-xs font-medium text-white"
+                  style={{ backgroundColor: String(b.color ?? "#D2500F") }}
+                  className="rounded-pill py-2 text-center text-xs font-bold text-white"
                 >
                   {String(action.label ?? "")}
                 </div>

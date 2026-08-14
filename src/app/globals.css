@@ -2,16 +2,108 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * 明るい暖色のひとつの世界に絞ったデザイン。
+ * 掃除・片付けという主題に合わせて、地は白ではなく象牙色にし、
+ * 影は黒ではなく茶を薄めたものを使う。冷たいグレーは一切使わない。
+ */
+
 :root {
   color-scheme: light;
+
+  --ground: #fff8f2;
+  --surface: #ffffff;
+  --ink: #2b1a10;
+  --muted: #8c7461;
+  --line: #eadcd0;
+  --brand: #e8621a;
+  --brand-dark: #d2500f;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: #f7f8f7;
-  color: #1d2b2a;
+  background-color: var(--ground);
+  color: var(--ink);
+  font-feature-settings: "palt" 1;
+  letter-spacing: 0.01em;
+}
+
+/* 見出しは字間を詰めて、本文との差を字形でつける */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* 数字が並ぶところは必ず桁を揃える */
+table,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* フォーム部品の既定。個別に書かなくても全体の質が揃う */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="email"],
+input[type="tel"],
+input[type="file"],
+select,
+textarea {
+  background-color: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(232, 98, 26, 0.16);
+}
+
+/* キーボード操作でも居場所が分かるようにする */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: rgba(232, 98, 26, 0.22);
+}
+
+/* 横に長い表は、その要素の中だけで横スクロールさせる（本文は横に流さない） */
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media print {
-  .no-print { display: none !important; }
-  body { background: #fff; }
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
 }

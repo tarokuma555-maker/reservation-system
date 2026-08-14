@@ -98,8 +98,8 @@ export async function pushMessage(params: {
 
 /* ---------------- メッセージの組み立て ---------------- */
 
-const ACCENT = "#47705F";
-const ACCENT_ONLINE = "#A9603C";
+const ACCENT = "#D2500F"; // 訪問
+const ACCENT_ONLINE = "#0F6E6A"; // オンライン
 
 export function textMessage(text: string): LineMessage {
   return { type: "text", text };
@@ -147,12 +147,12 @@ export function flexCard(params: {
             layout: "baseline",
             spacing: "sm",
             contents: [
-              { type: "text", text: r.label, color: "#8C8C8C", size: "sm", flex: 3 },
+              { type: "text", text: r.label, color: "#8C7461", size: "sm", flex: 3 },
               {
                 type: "text",
                 text: r.value,
                 wrap: r.wrap ?? true,
-                color: "#333333",
+                color: "#2B1A10",
                 size: "sm",
                 flex: 7,
               },
@@ -165,7 +165,7 @@ export function flexCard(params: {
                   layout: "vertical",
                   margin: "lg",
                   paddingAll: "10px",
-                  backgroundColor: "#F5F5F3",
+                  backgroundColor: "#FFF3EA",
                   cornerRadius: "6px",
                   contents: [
                     { type: "text", text: params.notice, wrap: true, size: "xs", color: "#666666" },

@@ -40,7 +40,7 @@ export default async function ReservationDetail({
   return (
     <div className="space-y-5 p-4">
       {created ? (
-        <div className="rounded-xl border border-sage-300 bg-sage-50 p-4 text-sm text-sage-700">
+        <div className="rounded-card border border-good-100 bg-good-50 p-5 text-sm text-good-700">
           <p className="font-bold">ご予約を承りました</p>
           <p className="mt-1 text-xs leading-relaxed">
             確定のご連絡をLINEにお送りしました。前日{settings.reminderHour}時にリマインドをお送りします。
@@ -50,7 +50,7 @@ export default async function ReservationDetail({
 
       <div>
         <div className="flex items-start justify-between gap-2">
-          <h1 className="text-lg font-bold text-ink">ご予約の詳細</h1>
+          <h1 className="text-lg font-bold tracking-tight text-ink">ご予約の詳細</h1>
           <div className="flex gap-1">
             <DeliveryBadge type={reservation.deliveryType} />
             <StatusBadge status={reservation.status} />
@@ -58,7 +58,7 @@ export default async function ReservationDetail({
         </div>
       </div>
 
-      <dl className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 text-sm">
+      <dl className="space-y-2 rounded-card border border-slate-200/80 bg-surface p-5 text-sm">
         <Row label="日時" value={formatRange(reservation.startAt, reservation.endAt)} />
         <Row label="メニュー" value={reservation.menu.name} />
         {reservation.options.length > 0 ? (
@@ -76,10 +76,10 @@ export default async function ReservationDetail({
       </dl>
 
       {reservation.deliveryType === "online" && reservation.meetingUrl && isActive ? (
-        <div className="rounded-2xl border border-clay-500/30 bg-clay-100 p-4">
-          <p className="text-xs font-bold text-clay-600">オンライン相談のご参加URL</p>
-          <p className="mt-1 break-all text-xs text-clay-600">{reservation.meetingUrl}</p>
-          <p className="mt-2 text-[11px] text-clay-600">
+        <div className="rounded-2xl border border-ocean-500/30 bg-ocean-100 p-4">
+          <p className="text-xs font-bold text-ocean-600">オンライン相談のご参加URL</p>
+          <p className="mt-1 break-all text-xs text-ocean-600">{reservation.meetingUrl}</p>
+          <p className="mt-2 text-2xs text-ocean-600">
             開始{settings.onlineReminderMinutes}分前にも、このURLをLINEでお送りします。
           </p>
         </div>
@@ -87,7 +87,7 @@ export default async function ReservationDetail({
 
       {isActive ? (
         <>
-          <section className="rounded-2xl border border-slate-200 bg-white p-4">
+          <section className="rounded-card border border-slate-200/80 bg-surface p-5">
             <h2 className="text-sm font-bold text-ink">日時を変更する</h2>
             <p className="mb-3 mt-1 text-xs text-slate-500">
               変更後の空き状況が表示されます。前後のご予約との移動時間も考慮しています。
@@ -100,7 +100,7 @@ export default async function ReservationDetail({
             />
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4">
+          <section className="rounded-card border border-slate-200/80 bg-surface p-5">
             <h2 className="text-sm font-bold text-ink">キャンセルする</h2>
             <p className="mt-1 text-xs leading-relaxed text-slate-600">
               開始まで約{Math.floor(hoursUntil)}時間です。
@@ -116,11 +116,11 @@ export default async function ReservationDetail({
                 <input
                   name="reason"
                   placeholder="理由（任意）"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
                 />
                 <button
                   type="submit"
-                  className="w-full rounded-lg border border-rose-300 py-2 text-sm font-medium text-rose-600"
+                  className="w-full rounded-lg border border-bad-100 py-2 text-sm font-medium text-bad-600"
                 >
                   {policy.feeRate === 0
                     ? "キャンセルする"
@@ -139,7 +139,7 @@ export default async function ReservationDetail({
                 <input type="hidden" name="reservationId" value={reservation.id} />
                 <button
                   type="submit"
-                  className="w-full rounded-lg border border-slate-300 py-2 text-sm text-slate-700"
+                  className="w-full rounded-pill border border-slate-200 bg-surface py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700"
                 >
                   今回だけお休みする（定期は続けます）
                 </button>
@@ -149,7 +149,7 @@ export default async function ReservationDetail({
         </>
       ) : null}
 
-      <Link href="/liff/reservations" className="block text-center text-xs text-sage-600 underline">
+      <Link href="/liff/reservations" className="block text-center text-xs text-brand-600 underline">
         予約一覧に戻る
       </Link>
     </div>

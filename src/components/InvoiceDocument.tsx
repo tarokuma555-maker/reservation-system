@@ -37,14 +37,14 @@ export default function InvoiceDocument(props: InvoiceDocumentProps) {
   const rates = Object.keys(props.taxByTaxRate).sort();
 
   return (
-    <div className="bg-white p-8 text-[#1d2b2a]">
+    <div className="bg-white p-8 text-ink">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-wide">
             {INVOICE_TYPE_LABEL[props.type] ?? props.type}
           </h1>
           {props.status === "void" ? (
-            <p className="mt-1 text-sm font-bold text-rose-600">※ この書類は無効です</p>
+            <p className="mt-1 text-sm font-bold text-bad-600">※ この書類は無効です</p>
           ) : null}
         </div>
         <div className="text-right text-xs text-slate-600">
@@ -131,7 +131,7 @@ export default function InvoiceDocument(props: InvoiceDocumentProps) {
         </p>
       ) : null}
       {props.voidReason ? (
-        <p className="mt-4 rounded bg-rose-50 p-3 text-xs text-rose-600">
+        <p className="mt-4 rounded bg-bad-50 p-3 text-xs text-bad-600">
           無効理由: {props.voidReason}
         </p>
       ) : null}

@@ -16,7 +16,7 @@ export default async function MenusAdminPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-bold text-ink">メニュー</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">メニュー</h1>
         <p className="text-sm text-slate-500">
           料金は税込で登録します（消費者向けは総額表示が義務のため）
         </p>
@@ -30,17 +30,17 @@ export default async function MenusAdminPage() {
         <SectionTitle hint="提供形態によって、予約フローの分岐がすべて決まります">
           メニュー一覧
         </SectionTitle>
-        <Card className="overflow-x-auto p-0">
+        <Card className="scroll-x p-0">
           <table className="w-full min-w-[720px] text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
+            <thead className="border-b border-slate-200 bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
               <tr>
-                <th className="px-4 py-2 text-left">メニュー</th>
-                <th className="px-4 py-2 text-left">形態</th>
-                <th className="px-4 py-2 text-right">所要</th>
-                <th className="px-4 py-2 text-right">税込</th>
-                <th className="px-4 py-2 text-right">税抜</th>
-                <th className="px-4 py-2 text-right">消費税</th>
-                <th className="px-4 py-2 text-left">備考</th>
+                <th className="px-4 py-2.5 text-left">メニュー</th>
+                <th className="px-4 py-2.5 text-left">形態</th>
+                <th className="px-4 py-2.5 text-right">所要</th>
+                <th className="px-4 py-2.5 text-right">税込</th>
+                <th className="px-4 py-2.5 text-right">税抜</th>
+                <th className="px-4 py-2.5 text-right">消費税</th>
+                <th className="px-4 py-2.5 text-left">備考</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -66,14 +66,14 @@ export default async function MenusAdminPage() {
                     <td className="px-4 py-2">
                       <DeliveryBadge type={m.deliveryType} />
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums">{m.durationMinutes}分</td>
-                    <td className="px-4 py-2 text-right font-medium tabular-nums">
+                    <td className="px-4 py-2.5 text-right tabular-nums">{m.durationMinutes}分</td>
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">
                       {formatYen(m.price)}
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-slate-600">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-slate-600">
                       {formatYen(b.subtotalByTaxRate[m.taxRate] ?? 0)}
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-slate-600">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-slate-600">
                       {formatYen(b.taxByTaxRate[m.taxRate] ?? 0)}
                     </td>
                     <td className="px-4 py-2 text-xs text-slate-500">
@@ -96,21 +96,21 @@ export default async function MenusAdminPage() {
 
       <section>
         <SectionTitle>オプション</SectionTitle>
-        <Card className="overflow-x-auto p-0">
+        <Card className="scroll-x p-0">
           <table className="w-full min-w-[480px] text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
+            <thead className="border-b border-slate-200 bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
               <tr>
-                <th className="px-4 py-2 text-left">オプション</th>
-                <th className="px-4 py-2 text-right">追加時間</th>
-                <th className="px-4 py-2 text-right">追加料金（税込）</th>
+                <th className="px-4 py-2.5 text-left">オプション</th>
+                <th className="px-4 py-2.5 text-right">追加時間</th>
+                <th className="px-4 py-2.5 text-right">追加料金（税込）</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {options.map((o) => (
                 <tr key={o.id}>
                   <td className="px-4 py-2">{o.name}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">+{o.additionalMinutes}分</td>
-                  <td className="px-4 py-2 text-right tabular-nums">
+                  <td className="px-4 py-2.5 text-right tabular-nums">+{o.additionalMinutes}分</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
                     +{formatYen(o.additionalPrice)}
                   </td>
                 </tr>

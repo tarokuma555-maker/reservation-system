@@ -24,7 +24,7 @@ export default async function AdminRecurringList() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-xl font-bold text-ink">定期予約</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">定期予約</h1>
         <p className="text-sm text-slate-500">
           ルールの一覧です。個別の回の調整はルールを開いて行います。
         </p>
@@ -36,7 +36,7 @@ export default async function AdminRecurringList() {
         <div className="space-y-3">
           {rules.map((rule) => (
             <Link key={rule.id} href={`/admin/recurring/${rule.id}`}>
-              <Card className="transition hover:border-sage-400">
+              <Card className="transition hover:border-brand-300">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-bold text-ink">
@@ -86,8 +86,8 @@ export default async function AdminRecurringList() {
 
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    active: { label: "稼働中", cls: "bg-sage-500 text-white" },
-    paused: { label: "休止中", cls: "bg-amber-100 text-amber-700" },
+    active: { label: "稼働中", cls: "bg-brand-500 text-white" },
+    paused: { label: "休止中", cls: "bg-warn-100 text-warn-700" },
     ended: { label: "終了", cls: "bg-slate-200 text-slate-600" },
   };
   const s = map[status] ?? map.ended;

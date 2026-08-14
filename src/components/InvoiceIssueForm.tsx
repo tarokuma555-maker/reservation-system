@@ -33,12 +33,12 @@ export default function InvoiceIssueForm({
   return (
     <div className="space-y-4">
       {state.ok ? (
-        <p className="rounded-lg border border-sage-300 bg-sage-50 px-3 py-2 text-sm text-sage-700">
+        <p className="rounded-xl border border-good-100 bg-good-50 px-3.5 py-2.5 text-sm font-medium text-good-700">
           {state.ok}
         </p>
       ) : null}
       {state.error ? (
-        <div className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg border border-bad-100 bg-bad-50 px-3 py-2 text-sm text-bad-700">
           <p className="font-bold">{state.error}</p>
           {state.errors?.length ? (
             <ul className="mt-1 list-disc pl-5 text-xs">
@@ -51,7 +51,7 @@ export default function InvoiceIssueForm({
       ) : null}
 
       {withCandidates.map((c) => (
-        <form key={c.id} action={formAction} className="rounded-xl border border-slate-200 p-4">
+        <form key={c.id} action={formAction} className="rounded-card border border-slate-200/80 p-5">
           <input type="hidden" name="customerId" value={c.id} />
           <p className="mb-2 text-sm font-bold text-ink">{c.name}</p>
           <div className="space-y-1.5">
@@ -74,7 +74,7 @@ export default function InvoiceIssueForm({
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <select
               name="type"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               defaultValue="receipt"
             >
               <option value="receipt">領収書として発行</option>
@@ -83,7 +83,7 @@ export default function InvoiceIssueForm({
             <button
               type="submit"
               disabled={pending}
-              className="rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 disabled:opacity-50"
             >
               {pending ? "発行中…" : "発行してLINEに送る"}
             </button>

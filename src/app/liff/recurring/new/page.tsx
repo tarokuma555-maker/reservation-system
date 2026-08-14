@@ -22,7 +22,7 @@ export default async function NewRecurringPage() {
   return (
     <div className="space-y-5 p-4">
       <div>
-        <h1 className="text-lg font-bold text-ink">定期利用のお申込み</h1>
+        <h1 className="text-lg font-bold tracking-tight text-ink">定期利用のお申込み</h1>
         <p className="mt-1 text-xs leading-relaxed text-slate-600">
           曜日と時間を決めておくと、毎回ご予約いただかなくても自動でお伺いします。
           お休みしたい回だけスキップすることもできます。
@@ -38,7 +38,7 @@ export default async function NewRecurringPage() {
             {selectable.map((m, i) => (
               <label
                 key={m.id}
-                className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 has-[:checked]:border-sage-500 has-[:checked]:bg-sage-50"
+                className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-surface p-3 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
               >
                 <input
                   type="radio"
@@ -61,7 +61,7 @@ export default async function NewRecurringPage() {
             ))}
           </div>
           {!canVisit ? (
-            <p className="mt-2 text-[11px] text-clay-600">
+            <p className="mt-2 text-2xs text-ocean-600">
               ※ ご登録の住所は訪問エリア外のため、オンラインのプランのみ選択できます
             </p>
           ) : null}
@@ -110,14 +110,14 @@ export default async function NewRecurringPage() {
           </div>
         </section>
 
-        <div className="rounded-xl bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-600">
+        <div className="rounded-xl bg-brand-50/60 p-3.5 text-2xs leading-relaxed text-slate-600">
           お申込み後、今後90日分のご予定を自動で確保します。
           既にほかのご予約が入っている回は確保できないため、その場合は個別にご相談させてください。
         </div>
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-sage-600 py-3 text-sm font-bold text-white"
+          className="w-full rounded-pill bg-brand-600 py-3.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700"
         >
           この内容で申し込む
         </button>
@@ -126,7 +126,7 @@ export default async function NewRecurringPage() {
   );
 }
 
-const inputCls = "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm";
+const inputCls = "w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

@@ -17,14 +17,14 @@ export default async function StatementsPage() {
           <Link href="/admin/accounting" className="text-xs text-slate-500 hover:underline">
             ← 帳簿へ戻る
           </Link>
-          <h1 className="mt-1 text-xl font-bold text-ink">決算書（計算書類）</h1>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tighter text-ink">決算書（計算書類）</h1>
           <p className="text-sm text-slate-500">
             {fs.fiscalYear.startDate} 〜 {fs.fiscalYear.endDate}
           </p>
         </div>
         <Link
           href="/admin/accounting/tax"
-          className="no-print rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm"
+          className="no-print rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700"
         >
           消費税の集計を見る
         </Link>
@@ -36,7 +36,7 @@ export default async function StatementsPage() {
           <Card className="p-0">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-slate-100">
-                <tr className="bg-slate-50 text-xs text-slate-600">
+                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
                   <td className="px-4 py-2" colSpan={2}>
                     売上高
                   </td>
@@ -54,7 +54,7 @@ export default async function StatementsPage() {
                   </td>
                 </tr>
 
-                <tr className="bg-slate-50 text-xs text-slate-600">
+                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
                   <td className="px-4 py-2" colSpan={2}>
                     販売費及び一般管理費
                   </td>
@@ -74,7 +74,7 @@ export default async function StatementsPage() {
 
                 <tr className="border-t border-slate-300 font-bold">
                   <td className="px-4 py-2">経常利益</td>
-                  <td className="px-4 py-2 text-right tabular-nums">
+                  <td className="px-4 py-2.5 text-right tabular-nums">
                     {formatYen(fs.profitAndLoss.ordinaryIncome)}
                   </td>
                 </tr>
@@ -84,9 +84,9 @@ export default async function StatementsPage() {
                     {formatYen(fs.profitAndLoss.corporateTax)}
                   </td>
                 </tr>
-                <tr className="border-t border-slate-300 bg-sage-50 font-bold">
+                <tr className="border-t border-slate-300 bg-brand-50 font-bold">
                   <td className="px-4 py-2">当期純利益</td>
-                  <td className="px-4 py-2 text-right tabular-nums">
+                  <td className="px-4 py-2.5 text-right tabular-nums">
                     {formatYen(fs.profitAndLoss.netIncome)}
                   </td>
                 </tr>
@@ -104,7 +104,7 @@ export default async function StatementsPage() {
           <Card className="p-0">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-slate-100">
-                <tr className="bg-slate-50 text-xs text-slate-600">
+                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
                   <td className="px-4 py-2" colSpan={2}>
                     資産の部
                   </td>
@@ -122,7 +122,7 @@ export default async function StatementsPage() {
                   </td>
                 </tr>
 
-                <tr className="bg-slate-50 text-xs text-slate-600">
+                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
                   <td className="px-4 py-2" colSpan={2}>
                     負債の部
                   </td>
@@ -140,7 +140,7 @@ export default async function StatementsPage() {
                   </td>
                 </tr>
 
-                <tr className="bg-slate-50 text-xs text-slate-600">
+                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
                   <td className="px-4 py-2" colSpan={2}>
                     純資産の部
                   </td>
@@ -158,9 +158,9 @@ export default async function StatementsPage() {
                   </td>
                 </tr>
 
-                <tr className="border-t border-slate-300 bg-sage-50 font-bold">
+                <tr className="border-t border-slate-300 bg-brand-50 font-bold">
                   <td className="px-4 py-2">負債・純資産合計</td>
-                  <td className="px-4 py-2 text-right tabular-nums">
+                  <td className="px-4 py-2.5 text-right tabular-nums">
                     {formatYen(fs.balanceSheet.totalLiabilities + fs.balanceSheet.totalEquity)}
                   </td>
                 </tr>
@@ -173,21 +173,21 @@ export default async function StatementsPage() {
           <SectionTitle>株主資本等変動計算書</SectionTitle>
           <Card className="p-0">
             <table className="w-full text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
+              <thead className="border-b border-slate-200 bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
                 <tr>
-                  <th className="px-4 py-2 text-left">項目</th>
-                  <th className="px-4 py-2 text-right">当期首残高</th>
-                  <th className="px-4 py-2 text-right">当期変動額</th>
-                  <th className="px-4 py-2 text-right">当期末残高</th>
+                  <th className="px-4 py-2.5 text-left">項目</th>
+                  <th className="px-4 py-2.5 text-right">当期首残高</th>
+                  <th className="px-4 py-2.5 text-right">当期変動額</th>
+                  <th className="px-4 py-2.5 text-right">当期末残高</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {fs.equityStatement.rows.map((r) => (
                   <tr key={r.name}>
                     <td className="px-4 py-2">{r.name}</td>
-                    <td className="px-4 py-2 text-right tabular-nums">{formatYen(r.opening)}</td>
-                    <td className="px-4 py-2 text-right tabular-nums">{formatYen(r.change)}</td>
-                    <td className="px-4 py-2 text-right font-medium tabular-nums">
+                    <td className="px-4 py-2.5 text-right tabular-nums">{formatYen(r.opening)}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{formatYen(r.change)}</td>
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">
                       {formatYen(r.closing)}
                     </td>
                   </tr>
@@ -220,7 +220,7 @@ export default async function StatementsPage() {
                 売上高は提供形態（訪問・オンライン）およびサービス種別ごとに区分して管理しています。
               </p>
             </div>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-2xs text-slate-500">
               ひな形です。変更のあった項目のみ編集する運用を想定しています。
             </p>
           </Card>

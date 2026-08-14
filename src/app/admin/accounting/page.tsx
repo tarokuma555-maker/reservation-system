@@ -43,7 +43,7 @@ export default async function AccountingPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-ink">帳簿</h1>
+          <h1 className="text-2xl font-extrabold tracking-tighter text-ink">帳簿</h1>
           <p className="text-sm text-slate-500">
             {fy.startDate} 〜 {fy.endDate}
           </p>
@@ -51,13 +51,13 @@ export default async function AccountingPage() {
         <div className="flex gap-2 text-sm">
           <Link
             href="/admin/accounting/statements"
-            className="rounded-lg bg-sage-600 px-4 py-2 font-medium text-white"
+            className="rounded-pill bg-brand-600 px-4 py-2.5 font-bold text-white shadow-card transition hover:bg-brand-700"
           >
             決算書を見る
           </Link>
           <Link
             href="/admin/accounting/tax"
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2"
+            className="rounded-lg border border-slate-300 bg-surface px-4 py-2"
           >
             消費税の集計
           </Link>
@@ -67,8 +67,8 @@ export default async function AccountingPage() {
       <div
         className={`rounded-lg border px-4 py-3 text-sm ${
           tb.balanced
-            ? "border-sage-300 bg-sage-50 text-sage-700"
-            : "border-rose-300 bg-rose-50 text-rose-700"
+            ? "border-good-100 bg-good-50 text-good-700"
+            : "border-bad-100 bg-bad-50 text-bad-700"
         }`}
       >
         <p className="font-bold">
@@ -86,15 +86,15 @@ export default async function AccountingPage() {
         {tb.rows.length === 0 ? (
           <Empty>まだ仕訳がありません。予約を実施済みにするか、経費を登録してください。</Empty>
         ) : (
-          <Card className="overflow-x-auto p-0">
+          <Card className="scroll-x p-0">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
+              <thead className="border-b border-slate-200 bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
                 <tr>
-                  <th className="px-4 py-2 text-left">科目</th>
-                  <th className="px-4 py-2 text-left">区分</th>
-                  <th className="px-4 py-2 text-right">借方</th>
-                  <th className="px-4 py-2 text-right">貸方</th>
-                  <th className="px-4 py-2 text-right">残高</th>
+                  <th className="px-4 py-2.5 text-left">科目</th>
+                  <th className="px-4 py-2.5 text-left">区分</th>
+                  <th className="px-4 py-2.5 text-right">借方</th>
+                  <th className="px-4 py-2.5 text-right">貸方</th>
+                  <th className="px-4 py-2.5 text-right">残高</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -104,28 +104,28 @@ export default async function AccountingPage() {
                       <span className="text-slate-400">{r.code}</span> {r.name}
                     </td>
                     <td className="px-4 py-2 text-xs text-slate-500">{TYPE_LABEL[r.type]}</td>
-                    <td className="px-4 py-2 text-right tabular-nums">
+                    <td className="px-4 py-2.5 text-right tabular-nums">
                       {r.debit ? formatYen(r.debit) : "—"}
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums">
+                    <td className="px-4 py-2.5 text-right tabular-nums">
                       {r.credit ? formatYen(r.credit) : "—"}
                     </td>
-                    <td className="px-4 py-2 text-right font-medium tabular-nums">
+                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">
                       {formatYen(Math.abs(r.balance))}
-                      <span className="ml-1 text-[11px] text-slate-400">
+                      <span className="ml-1 text-2xs text-slate-400">
                         {r.balance >= 0 ? "借" : "貸"}
                       </span>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t border-slate-300 bg-slate-50 text-sm font-bold">
+              <tfoot className="border-t border-slate-300 bg-brand-50/60 text-sm font-bold">
                 <tr>
                   <td className="px-4 py-2" colSpan={2}>
                     合計
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums">{formatYen(tb.totalDebit)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{formatYen(tb.totalCredit)}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">{formatYen(tb.totalDebit)}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">{formatYen(tb.totalCredit)}</td>
                   <td />
                 </tr>
               </tfoot>
@@ -178,7 +178,7 @@ export default async function AccountingPage() {
 
           <form action={runDepreciationAction}>
             <input type="hidden" name="fiscalYearId" value={fy.id} />
-            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm">
+            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
               減価償却の仕訳を作成する（定額法・初年度は月割り）
             </button>
           </form>
@@ -200,7 +200,7 @@ export default async function AccountingPage() {
                   <p className="text-sm font-medium text-ink">
                     {e.entryDate} {e.description}
                   </p>
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                  <span className="rounded bg-slate-100 px-2 py-0.5 text-2xs text-slate-600">
                     {SOURCE_LABEL[e.sourceType] ?? e.sourceType}
                     {e.isAdjusting ? " ・決算整理" : ""}
                   </span>

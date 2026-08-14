@@ -52,14 +52,14 @@ export default async function InvoicesPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-xl font-bold text-ink">請求書・領収書</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">請求書・領収書</h1>
         <p className="text-sm text-slate-500">
           適格請求書（インボイス）の発行と一覧。発行時に法定6項目を検証します。
         </p>
       </header>
 
       {!registrationOk ? (
-        <div className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-lg border border-bad-100 bg-bad-50 px-4 py-3 text-sm text-bad-700">
           登録番号が「T + 数字13桁」の形式ではないため、インボイスを発行できません。
           <Link href="/admin/settings" className="ml-1 underline">
             設定
@@ -96,11 +96,11 @@ export default async function InvoicesPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-ink">
                         {inv.invoiceNumber}
-                        <span className="ml-2 rounded bg-slate-100 px-2 py-0.5 text-[11px] font-normal text-slate-600">
+                        <span className="ml-2 rounded bg-slate-100 px-2 py-0.5 text-2xs font-normal text-slate-600">
                           {TYPE_LABEL[inv.type] ?? inv.type}
                         </span>
                         {inv.status === "void" ? (
-                          <span className="ml-2 rounded bg-rose-100 px-2 py-0.5 text-[11px] text-rose-600">
+                          <span className="ml-2 rounded bg-bad-100 px-2 py-0.5 text-2xs text-bad-600">
                             無効
                           </span>
                         ) : null}
@@ -120,7 +120,7 @@ export default async function InvoicesPage() {
                       <p className="text-lg font-bold tabular-nums">{formatYen(inv.totalAmount)}</p>
                       <Link
                         href={`/admin/invoices/${inv.id}`}
-                        className="text-xs text-sage-600 underline"
+                        className="text-xs text-brand-600 underline"
                       >
                         PDFを表示
                       </Link>
@@ -134,9 +134,9 @@ export default async function InvoicesPage() {
                         <input
                           name="reason"
                           placeholder="無効にする理由"
-                          className="rounded border border-slate-200 px-2 py-1.5 text-xs"
+                          className="rounded-xl border border-slate-200 px-3 py-2 text-2xs"
                         />
-                        <button className="rounded border border-slate-300 px-3 py-1.5 text-xs">
+                        <button className="rounded-pill border border-slate-200 bg-surface px-3 py-1.5 text-2xs font-bold text-slate-600 transition hover:border-brand-300">
                           無効にする
                         </button>
                       </form>
@@ -147,14 +147,14 @@ export default async function InvoicesPage() {
                           type="number"
                           name="amount"
                           defaultValue={Math.floor(inv.totalAmount / 2)}
-                          className="w-28 rounded border border-slate-200 px-2 py-1.5 text-xs tabular-nums"
+                          className="w-28 rounded-xl border border-slate-200 px-3 py-2 text-2xs tabular-nums"
                         />
                         <input
                           name="description"
                           defaultValue="キャンセル料の返還"
-                          className="rounded border border-slate-200 px-2 py-1.5 text-xs"
+                          className="rounded-xl border border-slate-200 px-3 py-2 text-2xs"
                         />
-                        <button className="rounded border border-slate-300 px-3 py-1.5 text-xs">
+                        <button className="rounded-pill border border-slate-200 bg-surface px-3 py-1.5 text-2xs font-bold text-slate-600 transition hover:border-brand-300">
                           返還インボイスを発行
                         </button>
                       </form>

@@ -49,7 +49,7 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
           <Link href="/admin/recurring" className="text-xs text-slate-500 hover:underline">
             ← 定期予約の一覧
           </Link>
-          <h1 className="mt-1 text-xl font-bold text-ink">{rule.customer.name} 様の定期利用</h1>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tighter text-ink">{rule.customer.name} 様の定期利用</h1>
           <p className="text-sm text-slate-600">
             {FREQUENCY_LABELS[rule.frequency as Frequency] ?? rule.frequency}
             {rule.frequency === "monthly_nth" ? ` 第${rule.nthWeek}` : " "}
@@ -67,8 +67,8 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
         </Card>
         <Card>
           <p className="text-xs text-slate-500">個別に変更した回</p>
-          <p className="mt-1 text-lg font-bold text-clay-600">{exceptionCount} 回</p>
-          <p className="text-[11px] text-slate-500">ルール変更で上書きされません</p>
+          <p className="mt-1 text-lg font-bold text-ocean-600">{exceptionCount} 回</p>
+          <p className="text-2xs text-slate-500">ルール変更で上書きされません</p>
         </Card>
         <Card>
           <p className="text-xs text-slate-500">状態</p>
@@ -76,7 +76,7 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
             {rule.status === "active" ? "稼働中" : rule.status === "paused" ? "休止中" : "終了"}
           </p>
           {rule.pausedFrom ? (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-2xs text-slate-500">
               {rule.pausedFrom}〜{rule.pausedTo}
             </p>
           ) : null}
@@ -97,7 +97,7 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                   <p className="text-sm font-medium text-ink">
                     {formatRange(r.startAt, r.endAt)}
                     {r.isException ? (
-                      <span className="ml-2 rounded bg-clay-100 px-1.5 py-0.5 text-[11px] text-clay-600">
+                      <span className="ml-2 rounded bg-ocean-100 px-1.5 py-0.5 text-2xs text-ocean-600">
                         この回だけ変更済み
                       </span>
                     ) : null}
@@ -115,7 +115,7 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                     <>
                       <form action={skipOccurrence}>
                         <input type="hidden" name="reservationId" value={r.id} />
-                        <button className="rounded border border-slate-300 bg-white px-2.5 py-1.5 text-xs">
+                        <button className="rounded-pill border border-slate-200 bg-surface px-3 py-1.5 text-2xs font-bold text-slate-600 transition hover:border-brand-300 hover:text-brand-700">
                           今回だけスキップ
                         </button>
                       </form>
@@ -131,13 +131,13 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                             </option>
                           ))}
                         </select>
-                        <button className="rounded border border-slate-300 bg-white px-2.5 py-1.5 text-xs">
+                        <button className="rounded-pill border border-slate-200 bg-surface px-3 py-1.5 text-2xs font-bold text-slate-600 transition hover:border-brand-300 hover:text-brand-700">
                           形態を変更
                         </button>
                       </form>
                       <Link
                         href={`/admin/reservations/${r.id}`}
-                        className="rounded border border-slate-300 bg-white px-2.5 py-1.5 text-xs"
+                        className="rounded-pill border border-slate-200 bg-surface px-3 py-1.5 text-2xs font-bold text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
                       >
                         日時変更・詳細
                       </Link>
@@ -163,7 +163,7 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                 <select
                   name="dayOfWeek"
                   defaultValue={rule.dayOfWeek}
-                  className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
                 >
                   {WEEKDAY_LABELS.map((w, i) => (
                     <option key={i} value={i}>
@@ -179,7 +179,7 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                   name="startTime"
                   step={1800}
                   defaultValue={rule.startTime}
-                  className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
                 />
               </label>
             </div>
@@ -189,10 +189,10 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                 type="date"
                 name="effectiveFrom"
                 defaultValue={addDays(today, 7)}
-                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
-            <button className="w-full rounded-lg bg-sage-600 py-2 text-sm font-medium text-white">
+            <button className="w-full rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
               この条件に変更する
             </button>
           </form>
@@ -209,16 +209,16 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                   type="date"
                   name="from"
                   defaultValue={today}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
                 />
                 <input
                   type="date"
                   name="to"
                   defaultValue={addDays(today, 21)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
                 />
               </div>
-              <button className="w-full rounded-lg border border-slate-300 py-2 text-sm">
+              <button className="w-full rounded-pill border border-slate-200 bg-surface py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
                 この期間を休止する
               </button>
             </form>
@@ -226,13 +226,13 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
             <div className="flex gap-2">
               <form action={resumeRuleAction} className="flex-1">
                 <input type="hidden" name="ruleId" value={rule.id} />
-                <button className="w-full rounded-lg border border-slate-300 py-2 text-sm">
+                <button className="w-full rounded-pill border border-slate-200 bg-surface py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
                   再開する
                 </button>
               </form>
               <form action={regenerateRuleAction} className="flex-1">
                 <input type="hidden" name="ruleId" value={rule.id} />
-                <button className="w-full rounded-lg border border-slate-300 py-2 text-sm">
+                <button className="w-full rounded-pill border border-slate-200 bg-surface py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
                   予定を生成し直す
                 </button>
               </form>
@@ -245,9 +245,9 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                 type="date"
                 name="endDate"
                 defaultValue={today}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
-              <button className="w-full rounded-lg border border-rose-300 py-2 text-sm text-rose-600">
+              <button className="w-full rounded-pill border border-bad-100 bg-surface py-2.5 text-sm font-bold text-bad-600 transition hover:bg-bad-50">
                 定期を終了する
               </button>
             </form>

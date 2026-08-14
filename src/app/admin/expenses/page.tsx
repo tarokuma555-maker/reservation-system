@@ -8,8 +8,8 @@ import { formatYen } from "@/lib/time";
 export const dynamic = "force-dynamic";
 
 const INVOICE_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  qualified: { label: "適格請求書あり", cls: "bg-sage-100 text-sage-700" },
-  non_qualified: { label: "インボイスなし", cls: "bg-clay-100 text-clay-600" },
+  qualified: { label: "適格請求書あり", cls: "bg-good-100 text-good-700" },
+  non_qualified: { label: "インボイスなし", cls: "bg-ocean-100 text-ocean-600" },
   small_amount_exception: { label: "少額特例", cls: "bg-slate-100 text-slate-600" },
 };
 
@@ -31,7 +31,7 @@ export default async function ExpensesPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-xl font-bold text-ink">経費とレシート</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">経費とレシート</h1>
         <p className="text-sm text-slate-500">
           レシートを読み取って、勘定科目の推定から仕訳の作成までを一度に行います
         </p>
@@ -39,7 +39,7 @@ export default async function ExpensesPage() {
 
       <div
         className={`rounded-lg border px-4 py-3 text-sm ${
-          live ? "border-sage-300 bg-sage-50 text-sage-700" : "border-amber-200 bg-amber-50 text-amber-800"
+          live ? "border-good-100 bg-good-50 text-good-700" : "border-warn-100 bg-warn-50 text-warn-700"
         }`}
       >
         <p className="font-bold">
@@ -85,18 +85,18 @@ export default async function ExpensesPage() {
                           {e.expenseDate} ／ {e.account.name} ／ {e.taxCategory}
                         </p>
                         {e.vendorRegistrationNumber ? (
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-2xs text-slate-400">
                             登録番号 {e.vendorRegistrationNumber}
                           </p>
                         ) : null}
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="font-medium tabular-nums">{formatYen(e.amount)}</p>
-                        <span className={`rounded px-2 py-0.5 text-[11px] ${s.cls}`}>{s.label}</span>
+                        <span className={`rounded px-2 py-0.5 text-2xs ${s.cls}`}>{s.label}</span>
                       </div>
                     </div>
                     {e.journalEntryId ? (
-                      <p className="mt-1 text-[11px] text-sage-700">仕訳を作成済み</p>
+                      <p className="mt-1 text-2xs text-brand-700">仕訳を作成済み</p>
                     ) : null}
                   </div>
                 );

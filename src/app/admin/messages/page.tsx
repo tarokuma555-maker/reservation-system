@@ -12,10 +12,10 @@ import {
 export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  sent: { label: "送信済", cls: "bg-sage-500 text-white" },
+  sent: { label: "送信済", cls: "bg-good-600 text-white" },
   mocked: { label: "モック送信", cls: "bg-slate-200 text-slate-700" },
-  failed: { label: "送信失敗", cls: "bg-rose-100 text-rose-700" },
-  queued: { label: "送信待ち", cls: "bg-amber-100 text-amber-700" },
+  failed: { label: "送信失敗", cls: "bg-bad-100 text-bad-700" },
+  queued: { label: "送信待ち", cls: "bg-warn-100 text-warn-700" },
 };
 
 export default async function MessagesPage() {
@@ -35,7 +35,7 @@ export default async function MessagesPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-xl font-bold text-ink">LINE連携</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">LINE連携</h1>
         <p className="text-sm text-slate-500">
           送信したメッセージ、受信したWebhook、リッチメニューの管理
         </p>
@@ -44,8 +44,8 @@ export default async function MessagesPage() {
       <div
         className={`rounded-lg border px-4 py-3 text-sm ${
           live
-            ? "border-sage-300 bg-sage-50 text-sage-700"
-            : "border-amber-200 bg-amber-50 text-amber-800"
+            ? "border-good-100 bg-good-50 text-good-700"
+            : "border-warn-100 bg-warn-50 text-warn-700"
         }`}
       >
         <p className="font-bold">
@@ -67,12 +67,12 @@ export default async function MessagesPage() {
         </SectionTitle>
         <Card className="flex flex-wrap gap-3">
           <form action={runReminderBatchAction}>
-            <button className="rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
               明日の予約に前日リマインドを送る
             </button>
           </form>
           <form action={runOnlineReminderBatchAction}>
-            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm">
+            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
               オンライン開始前リマインドを送る
             </button>
           </form>
@@ -94,19 +94,19 @@ export default async function MessagesPage() {
                       {m.customer.name} 様
                       <span className="ml-2 text-xs font-normal text-slate-500">{m.type}</span>
                     </p>
-                    <span className={`rounded px-2 py-0.5 text-[11px] ${s.cls}`}>{s.label}</span>
+                    <span className={`rounded px-2 py-0.5 text-2xs ${s.cls}`}>{s.label}</span>
                   </div>
                   <div className="rounded-lg bg-slate-100 p-3">
                     <FlexPreview payload={m.payload} />
                   </div>
                   {m.errorMessage ? (
-                    <p className="mt-2 text-xs text-rose-600">{m.errorMessage}</p>
+                    <p className="mt-2 text-xs text-bad-600">{m.errorMessage}</p>
                   ) : null}
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-[11px] text-slate-500">
+                    <summary className="cursor-pointer text-2xs text-slate-500">
                       実際に送るJSONを見る
                     </summary>
-                    <pre className="mt-1 max-h-64 overflow-auto rounded bg-slate-900 p-3 text-[10px] leading-relaxed text-slate-100">
+                    <pre className="mt-1 max-h-64 overflow-auto rounded-xl bg-slate-900 p-3.5 text-[10px] leading-relaxed text-brand-100">
                       {m.payload}
                     </pre>
                   </details>
@@ -127,7 +127,7 @@ export default async function MessagesPage() {
               種別
               <select
                 name="eventType"
-                className="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               >
                 <option value="follow">follow（友だち追加）</option>
                 <option value="message">message（メッセージ受信）</option>
@@ -139,7 +139,7 @@ export default async function MessagesPage() {
               ユーザー
               <select
                 name="lineUserId"
-                className="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               >
                 {customers.map((c) => (
                   <option key={c.id} value={c.lineUserId}>
@@ -154,10 +154,10 @@ export default async function MessagesPage() {
               <input
                 name="text"
                 placeholder="予約を変更したいです"
-                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
               />
             </label>
-            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm">
+            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
               疑似イベントを送る
             </button>
           </form>
@@ -200,7 +200,7 @@ export default async function MessagesPage() {
                     </p>
                   </div>
                   {rm.isPublished ? (
-                    <span className="rounded bg-sage-500 px-2 py-0.5 text-[11px] text-white">
+                    <span className="rounded bg-brand-500 px-2 py-0.5 text-2xs text-white">
                       公開中
                     </span>
                   ) : null}
@@ -210,23 +210,23 @@ export default async function MessagesPage() {
                   {areas.map((a) => (
                     <div
                       key={a.path}
-                      className="flex flex-col items-center gap-1 bg-sage-50 py-4 text-center"
+                      className="flex flex-col items-center gap-1 bg-brand-50 py-4 text-center"
                     >
                       <span className="text-xl">{a.icon}</span>
-                      <span className="text-[11px] text-slate-700">{a.label}</span>
+                      <span className="text-2xs text-slate-700">{a.label}</span>
                     </div>
                   ))}
                 </div>
 
                 {rm.lineRichMenuId ? (
-                  <p className="mt-2 text-[11px] text-slate-500">
+                  <p className="mt-2 text-2xs text-slate-500">
                     richMenuId: {rm.lineRichMenuId}
                   </p>
                 ) : null}
 
                 <form action={publishRichMenuAction} className="mt-3">
                   <input type="hidden" name="richMenuId" value={rm.id} />
-                  <button className="w-full rounded-lg border border-slate-300 py-2 text-sm">
+                  <button className="w-full rounded-pill border border-slate-200 bg-surface py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
                     このメニューを登録して公開する
                   </button>
                 </form>

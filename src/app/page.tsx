@@ -1,100 +1,181 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
-import { Card, ProvisionalNote } from "@/components/ui";
+import { lineMode } from "@/lib/line";
+import { googleMode } from "@/lib/google-calendar";
+import { ocrMode } from "@/lib/ocr";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [settings, counts] = await Promise.all([
+  const [settings, customers, menus, reservations, rules, invoices, entries] = await Promise.all([
     getSettings(),
-    Promise.all([
-      prisma.customer.count(),
-      prisma.menu.count(),
-      prisma.reservation.count(),
-      prisma.recurringRule.count(),
-      prisma.invoice.count(),
-    ]),
+    prisma.customer.count(),
+    prisma.menu.count(),
+    prisma.reservation.count(),
+    prisma.recurringRule.count(),
+    prisma.invoice.count(),
+    prisma.journalEntry.count(),
   ]);
-  const [customers, menus, reservations, rules, invoices] = counts;
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-10">
-      <header className="mb-8">
-        <p className="text-xs font-medium tracking-widest text-sage-600">DEMO</p>
-        <h1 className="mt-1 text-2xl font-bold text-ink">LINE予約システム</h1>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">
-          お掃除の家事代行・片付けコンサル向けの予約システムのデモです。
-          お客様側（LINE）と管理側の両方を、実際に触って動かせます。
-        </p>
-      </header>
+    <main className="min-h-screen bg-ground-warm">
+      <div className="mx-auto max-w-5xl px-6 py-14 lg:py-20">
+        <header className="max-w-2xl">
+          <p className="text-2xs font-bold tracking-[0.2em] text-brand-600">DEMO</p>
+          <h1 className="mt-3 text-3xl font-extrabold leading-[1.25] tracking-tighter text-ink lg:text-4xl">
+            おそうじと片付けの仕事を、
+            <br />
+            <span className="text-brand-600">LINEひとつ</span>で回す。
+          </h1>
+          <p className="mt-4 text-sm leading-relaxed text-slate-600">
+            家事代行・片付けコンサル向けの予約システムです。
+            お客様側のLINE画面と、オーナー側の管理画面の両方を、実際に触って動かせます。
+            予約から会計・決算書まで、すべて本物のロジックで動いています。
+          </p>
+        </header>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link href="/liff" className="group">
-          <Card className="h-full transition group-hover:border-sage-500 group-hover:shadow-md">
-            <p className="text-2xl">📱</p>
-            <h2 className="mt-2 font-bold text-ink">お客様側（LINE画面）</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              リッチメニューから予約・変更・キャンセル・定期利用の申込みまで。
-              LINE内で開くLIFFアプリを想定した画面です。
-            </p>
-            <p className="mt-3 text-sm font-medium text-sage-600">開く →</p>
-          </Card>
-        </Link>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <EntryCard
+            href="/liff"
+            eyebrow="お客様側"
+            title="LINEの画面"
+            body="リッチメニューから予約・変更・キャンセル・定期利用の申込みまで。届く通知もそのまま確認できます。"
+            accent
+          />
+          <EntryCard
+            href="/admin"
+            eyebrow="オーナー側"
+            title="管理画面"
+            body="スケジュール管理、定期予約のイレギュラー対応、インボイス発行、経費と証憑、帳簿と決算書。"
+          />
+        </div>
 
-        <Link href="/admin" className="group">
-          <Card className="h-full transition group-hover:border-sage-500 group-hover:shadow-md">
-            <p className="text-2xl">🗓️</p>
-            <h2 className="mt-2 font-bold text-ink">管理画面</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              スケジュール管理、定期予約のイレギュラー対応、顧客・メニュー管理、
-              インボイスの発行、各種設定。
-            </p>
-            <p className="mt-3 text-sm font-medium text-sage-600">開く →</p>
-          </Card>
-        </Link>
-      </div>
+        <section className="mt-14">
+          <h2 className="text-sm font-bold tracking-tight text-ink">このデモで見ていただきたい4つ</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Point
+              n="01"
+              title="提供形態で分岐する空き枠"
+              body="訪問とオンラインでは、必要な情報も移動時間も違います。前後の予約の組み合わせで必要な移動時間を計算し、埋まっている枠には理由を出します。"
+            />
+            <Point
+              n="02"
+              title="定期予約のイレギュラー対応"
+              body="「今回だけ休む」「今回だけ日時変更」をしても、あとからルールを変更した際にその回が消えません。"
+            />
+            <Point
+              n="03"
+              title="適格請求書とPDF"
+              body="法定6項目を検証し、税率ごとに1回だけ端数処理します。PDFは実際に生成され、証憑として保存されます。"
+            />
+            <Point
+              n="04"
+              title="帳簿から決算書まで"
+              body="予約と経費が自動で仕訳になり、試算表・計算書類4表・消費税集計まで積み上がります。"
+            />
+          </div>
+        </section>
 
-      <section className="mt-8">
-        <h2 className="mb-3 text-sm font-bold text-ink">このデモで確認できること</h2>
-        <Card>
-          <ul className="space-y-2 text-sm text-slate-700">
-            <li>
-              <b>提供形態で分岐する予約フロー</b> — 訪問とオンラインで、必要な情報も空き枠の出方も変わります
-            </li>
-            <li>
-              <b>移動時間バッファの4パターン</b> — 前後の予約の組み合わせで必要な移動時間を計算します。
-              空き枠が埋まっている理由は管理画面で確認できます
-            </li>
-            <li>
-              <b>定期予約のイレギュラー対応</b> — 「今回だけ休む」「今回だけ日時変更」をしても、
-              ルール変更でその回が消えないことを確認できます
-            </li>
-            <li>
-              <b>適格請求書（インボイス）の発行</b> — 税率ごとに1回だけ端数処理する計算と、
-              法定6項目の検証が入っています
-            </li>
+        <section className="mt-12 rounded-card border border-slate-200/80 bg-surface p-6 shadow-card">
+          <h2 className="text-sm font-bold tracking-tight text-ink">外部連携のいまの状態</h2>
+          <p className="mt-1 text-xs leading-relaxed text-slate-600">
+            認証情報が未設定のあいだはモックで動きます。送信するJSONやカレンダーの状態は同じものを組み立てているため、
+            <b>いま見えている挙動がそのまま本番の挙動</b>です。
+          </p>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-3">
+            <ModeChip label="LINE Messaging API" mode={lineMode()} />
+            <ModeChip label="Googleカレンダー" mode={googleMode()} />
+            <ModeChip label="レシートOCR" mode={ocrMode()} />
           </ul>
-        </Card>
-      </section>
+        </section>
 
-      <section className="mt-6">
-        <ProvisionalNote>
-          <b>設定値はすべて仮置きです。</b> 事業者名「{settings.issuerName}」、登録番号「
-          {settings.registrationNumber}」、料金・営業時間・移動バッファなども仮の値です。
-          <Link href="/admin/settings" className="underline">
+        <section className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-2xs text-slate-500">
+          <span>顧客 {customers}名</span>
+          <span>メニュー {menus}件</span>
+          <span>予約 {reservations}件</span>
+          <span>定期ルール {rules}本</span>
+          <span>発行済み書類 {invoices}件</span>
+          <span>仕訳 {entries}件</span>
+        </section>
+
+        <p className="mt-6 rounded-card border border-warn-100 bg-warn-50 px-4 py-3 text-xs leading-relaxed text-warn-700">
+          設定値はすべて仮置きです。事業者名「{settings.issuerName}」、登録番号「
+          {settings.registrationNumber}」、料金・営業時間・移動時間なども仮の値で、
+          <Link href="/admin/settings" className="mx-1 font-bold underline">
             管理画面の設定
           </Link>
           からその場で変更できます。
-        </ProvisionalNote>
-      </section>
-
-      <section className="mt-6 text-xs text-slate-500">
-        <p>
-          デモデータ: 顧客 {customers}名 / メニュー {menus}件 / 予約 {reservations}件 / 定期ルール{" "}
-          {rules}本 / 発行済み書類 {invoices}件
         </p>
-      </section>
+      </div>
     </main>
+  );
+}
+
+function EntryCard({
+  href,
+  eyebrow,
+  title,
+  body,
+  accent,
+}: {
+  href: string;
+  eyebrow: string;
+  title: string;
+  body: string;
+  accent?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`group block rounded-card border p-6 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift ${
+        accent
+          ? "border-brand-700/20 bg-brand-sheen text-white"
+          : "border-slate-200/80 bg-surface hover:border-brand-200"
+      }`}
+    >
+      <p
+        className={`text-2xs font-bold tracking-wide ${accent ? "text-white/80" : "text-brand-600"}`}
+      >
+        {eyebrow}
+      </p>
+      <h2 className="mt-1.5 text-xl font-extrabold tracking-tighter">{title}</h2>
+      <p
+        className={`mt-2 text-xs leading-relaxed ${accent ? "text-white/85" : "text-slate-600"}`}
+      >
+        {body}
+      </p>
+      <p className="mt-4 text-xs font-bold">
+        開く <span className="inline-block transition group-hover:translate-x-1">→</span>
+      </p>
+    </Link>
+  );
+}
+
+function Point({ n, title, body }: { n: string; title: string; body: string }) {
+  return (
+    <div className="rounded-card border border-slate-200/80 bg-surface p-5 shadow-card">
+      <p className="text-2xs font-bold tabular-nums tracking-widest text-brand-400">{n}</p>
+      <h3 className="mt-1.5 text-sm font-bold tracking-tight text-ink">{title}</h3>
+      <p className="mt-1.5 text-xs leading-relaxed text-slate-600">{body}</p>
+    </div>
+  );
+}
+
+function ModeChip({ label, mode }: { label: string; mode: "live" | "mock" }) {
+  const live = mode === "live";
+  return (
+    <li
+      className={`flex items-center gap-2 rounded-pill border px-3.5 py-2 text-2xs font-bold ${
+        live ? "border-good-100 bg-good-50 text-good-700" : "border-slate-200 text-slate-600"
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${live ? "bg-good-600" : "bg-brand-400"}`}
+        aria-hidden
+      />
+      {label}
+      <span className="ml-auto font-medium text-slate-500">{live ? "接続中" : "モック"}</span>
+    </li>
   );
 }

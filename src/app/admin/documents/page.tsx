@@ -48,7 +48,7 @@ export default async function DocumentsPage({
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-xl font-bold text-ink">証憑ボックス</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">証憑ボックス</h1>
         <p className="text-sm text-slate-500">
           電子帳簿保存法の要件に沿って保存しています（訂正削除の履歴を残し、保存期限内は削除できません）
         </p>
@@ -80,10 +80,10 @@ export default async function DocumentsPage({
               取引先
               <input name="party" defaultValue={q.party} className={`${inputCls} w-full`} />
             </label>
-            <button className="rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
               検索
             </button>
-            <a href="/admin/documents" className="rounded-lg border border-slate-300 px-4 py-2 text-sm">
+            <a href="/admin/documents" className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300">
               条件をクリア
             </a>
           </form>
@@ -104,21 +104,21 @@ export default async function DocumentsPage({
                     <p className="text-xs text-slate-500">
                       {KIND_LABEL[d.kind] ?? d.kind} ／ 取引年月日 {d.transactionDate}
                     </p>
-                    <p className="mt-1 break-all text-[11px] text-slate-400">{d.filePath}</p>
+                    <p className="mt-1 break-all text-2xs text-slate-400">{d.filePath}</p>
                     {d.fileHash ? (
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-2xs text-slate-400">
                         SHA-256: {d.fileHash.slice(0, 16)}…（改ざん検知用）
                       </p>
                     ) : null}
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="font-medium tabular-nums">{formatYen(d.transactionAmount)}</p>
-                    <p className="text-[11px] text-slate-500">保存期限 {d.retentionUntil}</p>
+                    <p className="text-2xs text-slate-500">保存期限 {d.retentionUntil}</p>
                   </div>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2">
-                  <ul className="space-y-0.5 text-[11px] text-slate-500">
+                  <ul className="space-y-0.5 text-2xs text-slate-500">
                     {d.logs.map((l) => (
                       <li key={l.id}>
                         {l.action} ／ {l.detail || "—"} ／{" "}
@@ -130,7 +130,7 @@ export default async function DocumentsPage({
                     <input type="hidden" name="documentId" value={d.id} />
                     <input type="hidden" name="reason" value="管理画面からの削除操作" />
                     <button
-                      className="rounded border border-slate-300 px-2.5 py-1.5 text-[11px] text-slate-600"
+                      className="rounded-pill border border-slate-200 bg-surface px-3 py-1.5 text-2xs font-bold text-slate-600 transition hover:border-brand-300"
                       title={
                         d.retentionUntil >= today
                           ? "保存期限内のため削除できません"
@@ -154,4 +154,4 @@ export default async function DocumentsPage({
   );
 }
 
-const inputCls = "mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm";
+const inputCls = "mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm";

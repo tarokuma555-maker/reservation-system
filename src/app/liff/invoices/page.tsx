@@ -27,7 +27,7 @@ export default async function CustomerInvoicesPage() {
   return (
     <div className="space-y-4 p-4">
       <div>
-        <h1 className="text-lg font-bold text-ink">領収書・請求書</h1>
+        <h1 className="text-lg font-bold tracking-tight text-ink">領収書・請求書</h1>
         <p className="mt-1 text-xs text-slate-600">
           発行した書類はこちらからいつでもご確認いただけます。紛失時の再発行のご連絡は不要です。
         </p>
@@ -41,7 +41,7 @@ export default async function CustomerInvoicesPage() {
             const tax = parseBreakdown(inv.taxByTaxRate);
             const sub = parseBreakdown(inv.subtotalByTaxRate);
             return (
-              <div key={inv.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div key={inv.id} className="rounded-card border border-slate-200/80 bg-surface p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-xs text-slate-500">
@@ -61,7 +61,7 @@ export default async function CustomerInvoicesPage() {
                   ))}
                 </ul>
 
-                <div className="mt-2 border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+                <div className="mt-2 border-t border-slate-100 pt-2 text-2xs text-slate-500">
                   {Object.keys(tax).map((rate) => (
                     <p key={rate}>
                       {rate}%対象 {formatYen(sub[rate] ?? 0)} ／ 消費税 {formatYen(tax[rate] ?? 0)}

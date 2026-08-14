@@ -29,10 +29,10 @@ export default async function RecurringPage() {
   return (
     <div className="space-y-5 p-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-ink">定期利用</h1>
+        <h1 className="text-lg font-bold tracking-tight text-ink">定期利用</h1>
         <Link
           href="/liff/recurring/new"
-          className="rounded-lg bg-sage-600 px-3 py-1.5 text-xs font-medium text-white"
+          className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white"
         >
           新しく申し込む
         </Link>
@@ -46,7 +46,7 @@ export default async function RecurringPage() {
         </Empty>
       ) : (
         rules.map((rule) => (
-          <section key={rule.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+          <section key={rule.id} className="rounded-card border border-slate-200/80 bg-surface p-5">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-bold text-ink">
@@ -59,11 +59,11 @@ export default async function RecurringPage() {
               <div className="flex shrink-0 flex-col items-end gap-1">
                 <DeliveryBadge type={rule.menu.deliveryType} />
                 {rule.status === "paused" ? (
-                  <span className="rounded bg-amber-100 px-2 py-0.5 text-[11px] text-amber-700">
+                  <span className="rounded bg-warn-100 px-2 py-0.5 text-2xs text-warn-700">
                     休止中
                   </span>
                 ) : rule.status === "ended" ? (
-                  <span className="rounded bg-slate-200 px-2 py-0.5 text-[11px] text-slate-600">
+                  <span className="rounded bg-slate-200 px-2 py-0.5 text-2xs text-slate-600">
                     終了
                   </span>
                 ) : null}
@@ -90,7 +90,7 @@ export default async function RecurringPage() {
                         {formatRange(r.startAt, r.endAt)}
                       </p>
                       {r.isException ? (
-                        <p className="text-[10px] text-clay-600">この回だけ変更済み</p>
+                        <p className="text-[10px] text-ocean-600">この回だけ変更済み</p>
                       ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
@@ -100,7 +100,7 @@ export default async function RecurringPage() {
                           <input type="hidden" name="reservationId" value={r.id} />
                           <button
                             type="submit"
-                            className="rounded border border-slate-300 px-2 py-1 text-[11px] text-slate-600"
+                            className="rounded-pill border border-slate-200 bg-surface px-2.5 py-1 text-2xs font-bold text-slate-600 transition hover:border-brand-300"
                           >
                             今回休む
                           </button>
@@ -112,7 +112,7 @@ export default async function RecurringPage() {
               )}
             </div>
 
-            <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+            <p className="mt-3 text-2xs leading-relaxed text-slate-500">
               日時の変更は各予約の詳細から、条件の変更・お休み・解約はトークからご連絡ください。
             </p>
           </section>
