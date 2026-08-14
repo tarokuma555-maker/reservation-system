@@ -18,6 +18,11 @@ export const maxDuration = 60;
  * どの処理も「二度動いても結果が変わらない」ように作ってある。
  * 定時実行は失敗すると再送されることがあり、お客様に同じおしらせが
  * 2通届くのがいちばん困るため。
+ *
+ * いまのプラン（Hobby）では「1日1回のものを2つまで」しか置けない。
+ * そこで毎日ぶんは daily にまとめ、Vercelからはこれ1つだけを呼ぶ。
+ * 個別の受け口も残してあるので、手で動かしたいときや、
+ * 外部のスケジューラから細かく呼びたいときはそちらを使う。
  */
 export async function GET(req: NextRequest, ctx: { params: Promise<{ job: string }> }) {
   const secret = process.env.CRON_SECRET;
@@ -32,6 +37,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ job: string
 
   try {
     switch (job) {
+      case "daily":
+        return NextResponse.json(await runDaily());
       case "reminders":
         return NextResponse.json(await sendReminders());
       case "online-soon":
@@ -52,6 +59,32 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ job: string
       { status: 500 }
     );
   }
+}
+
+/**
+ * 毎日ぶんをまとめて動かす。
+ *
+ * 途中で1つ失敗しても、残りは動かす。カレンダーの調子が悪いという理由で
+ * 前日のおしらせが止まってしまうと、お客様にご迷惑がかかるため。
+ */
+async function runDaily() {
+  const results: Record<string, unknown> = {};
+
+  for (const [name, run] of [
+    ["reminders", sendReminders],
+    ["recurring", extendRecurring],
+    ["calendarRepair", repairCalendar],
+    ["health", checkConnections],
+  ] as const) {
+    try {
+      results[name] = await run();
+    } catch (e) {
+      console.error(`定時実行 ${name} が失敗しました`, e);
+      results[name] = { error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  return { job: "daily", results };
 }
 
 /** 明日のご予約に前日のおしらせを送る。すでに送った分は送らない。 */
