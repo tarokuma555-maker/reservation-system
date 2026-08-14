@@ -15,7 +15,10 @@ import { addDays } from "./time";
  * 証憑には電子帳簿保存法の検索要件3項目（取引年月日・取引金額・取引先）を必ず入れる。
  */
 
-const STORAGE_DIR = path.join(process.cwd(), "storage", "invoices");
+// 書き込み可能な場所に置く。サーバーレスでは /tmp しか書けない。
+const STORAGE_DIR = process.env.VERCEL
+  ? "/tmp/invoices"
+  : path.join(process.cwd(), "storage", "invoices");
 
 export function invoicePdfPath(invoiceNumber: string): string {
   return path.join(STORAGE_DIR, `${invoiceNumber}.pdf`);

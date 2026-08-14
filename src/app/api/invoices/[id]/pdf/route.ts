@@ -20,14 +20,9 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
         "Content-Disposition": `inline; filename="${invoice.invoiceNumber}.pdf"`,
       },
     });
-  } catch (e) {
-    return NextResponse.json(
-      {
-        error: "PDFの生成に失敗しました",
-        detail: e instanceof Error ? e.message : String(e),
-        hint: "Chromiumが見つからない場合は CHROMIUM_PATH を設定してください。印刷用の画面は /print/invoice/[id] で確認できます。",
-      },
-      { status: 500 }
-    );
+  } catch {
+    // Chromiumが使えない環境（サーバーレスなど）では、印刷用のページへ退避する。
+    // ブラウザの印刷機能からそのままPDFにできる。
+    return NextResponse.redirect(new URL(`/print/invoice/${id}?fallback=1`, _req.url));
   }
 }

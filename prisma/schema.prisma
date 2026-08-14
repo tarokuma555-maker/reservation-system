@@ -4,7 +4,9 @@
 // 浮動小数点数を一切使わずに消費税計算ができる（要件定義 付録C）。
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Vercel（Amazon Linux 2023）で動かすために必要
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
