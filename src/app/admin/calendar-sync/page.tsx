@@ -1,7 +1,19 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { googleMode, targetCalendarId } from "@/lib/google-calendar";
-import { Card, Empty, ProvisionalNote, SectionTitle } from "@/components/ui";
+import {
+  Button,
+  Card,
+  Empty,
+  Field,
+  ModeBanner,
+  SectionTitle,
+  TableShell,
+  Td,
+  Th,
+  inputClass,
+} from "@/components/ui";
+import { Icon } from "@/components/Icon";
 import { addDays, formatRange, todayStr } from "@/lib/time";
 import {
   driftCheckAction,
@@ -15,10 +27,10 @@ import {
 export const dynamic = "force-dynamic";
 
 const SYNC_LABEL: Record<string, { label: string; cls: string }> = {
-  synced: { label: "同期済", cls: "bg-good-600 text-white" },
-  pending: { label: "未同期", cls: "bg-warn-100 text-warn-700" },
-  failed: { label: "失敗", cls: "bg-bad-100 text-bad-700" },
-  deleted: { label: "削除済", cls: "bg-slate-200 text-slate-600" },
+  synced: { label: "うつせました", cls: "bg-good-600 text-white" },
+  pending: { label: "まだうつしていません", cls: "bg-warn-100 text-warn-700" },
+  failed: { label: "うつせませんでした", cls: "bg-bad-100 text-bad-700" },
+  deleted: { label: "消しました", cls: "bg-slate-200 text-slate-600" },
 };
 
 export default async function CalendarSyncPage() {
@@ -44,98 +56,116 @@ export default async function CalendarSyncPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">Googleカレンダー同期</h1>
-        <p className="text-sm text-slate-500">
-          予約の正はこのシステム。Googleカレンダーはミラーであり、私用予定の取り込み口です。
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">カレンダー連携</h1>
+        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+          ご予約をGoogleカレンダーにうつしておくと、スマホのカレンダーからも予定が見られます。
+          逆に、Googleに入れた私用の予定をこちらに取りこんで、その時間の予約を止めることもできます。
         </p>
       </header>
 
-      <div
-        className={`rounded-lg border px-4 py-3 text-sm ${
-          live
-            ? "border-good-100 bg-good-50 text-good-700"
-            : "border-warn-100 bg-warn-50 text-warn-700"
-        }`}
+      <ModeBanner
+        live={live}
+        liveTitle={`Googleカレンダーにつながっています（${targetCalendarId()}）`}
+        mockTitle="いまは お試しモード です（Googleには書きこんでいません）"
       >
-        <p className="font-bold">
-          {live
-            ? `本番接続: ${targetCalendarId()} に書き出しています`
-            : "お試しモード: Google側の状態をこのシステム内で再現しています"}
-        </p>
-        {!live ? (
-          <p className="mt-1 text-xs leading-relaxed">
-            <code>GOOGLE_CLIENT_ID</code> / <code>GOOGLE_CLIENT_SECRET</code> /{" "}
-            <code>GOOGLE_REFRESH_TOKEN</code> を設定すると実接続に切り替わります。
-            下の「Google側のカレンダー」は、実際にAPIへ送るのと同じ内容で作られています。
+        {live ? null : (
+          <p>
+            Googleの合いことばを入れると、そのまま本物のカレンダーに書きこまれます。
+            下に出ている「Googleカレンダーの中身」は、<b>実際に送るのとまったく同じ内容</b>で作っています。
           </p>
-        ) : null}
+        )}
+      </ModeBanner>
+
+      <div className="flex gap-3 rounded-card border border-brand-200 bg-brand-50/60 px-4 py-3.5">
+        <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+        <p className="text-xs leading-relaxed text-slate-700">
+          <b>どちらが正しいか</b>は、いつもこのシステムのほうです。Googleカレンダーは「うつしたもの」なので、
+          あちらで予定を消してしまっても、こちらの予約は消えません。ボタン1つで元どおりに戻せます。
+        </p>
       </div>
 
       <section>
-        <SectionTitle>同期の操作</SectionTitle>
+        <SectionTitle>いま、うごかす</SectionTitle>
         <Card className="flex flex-wrap gap-3">
           <form action={syncAllCalendarAction}>
-            <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
-              すべての予約を書き出す
-            </button>
+            <Button type="submit">
+              <Icon name="send" className="h-4 w-4" />
+              ご予約をGoogleにうつす
+            </Button>
           </form>
           <form action={importCalendarAction}>
-            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
-              私用予定を取り込む（ブロック枠にする）
-            </button>
+            <Button type="submit" variant="secondary">
+              <Icon name="download" className="h-4 w-4" />
+              Googleの私用予定を取りこむ
+            </Button>
           </form>
           <form action={driftCheckAction}>
-            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
-              不整合を検知して復元する
-            </button>
+            <Button type="submit" variant="secondary">
+              <Icon name="refresh" className="h-4 w-4" />
+              ずれていないか確かめて、直す
+            </Button>
           </form>
           {failedCount > 0 ? (
             <form action={retrySyncAction}>
-              <button className="rounded-lg border border-bad-100 bg-surface px-4 py-2 text-sm text-bad-600">
-                失敗した同期をやり直す（{failedCount}件）
-              </button>
+              <Button type="submit" variant="danger">
+                <Icon name="alert" className="h-4 w-4" />
+                うつせなかった {failedCount}件 をやり直す
+              </Button>
             </form>
           ) : null}
         </Card>
       </section>
 
       <section>
-        <SectionTitle hint="実際のGoogleカレンダーに作られるイベントと同じ内容です">
-          Google側のカレンダー
+        <SectionTitle hint="本物のGoogleカレンダーにも、この内容で入ります">
+          Googleカレンダーの中身
         </SectionTitle>
         {events.length === 0 ? (
-          <Empty>まだイベントがありません。「すべての予約を書き出す」を押してください。</Empty>
+          <Empty>
+            まだ何も入っていません。上の「ご予約をGoogleにうつす」を押してみてください。
+          </Empty>
         ) : (
           <Card className="divide-y divide-slate-100 p-0">
             {events.map((e) => (
-              <div key={e.id} className={`px-4 py-3 ${e.isDeleted ? "opacity-40" : ""}`}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
+              <div key={e.id} className={`px-5 py-3.5 ${e.isDeleted ? "opacity-40" : ""}`}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink">
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-ink">
                       {e.summary}
                       {e.isDeleted ? (
-                        <span className="ml-2 text-xs text-bad-600">Google側で削除済み</span>
+                        <span className="rounded-pill bg-bad-100 px-2 py-0.5 text-2xs font-bold text-bad-700">
+                          Google側で消えています
+                        </span>
                       ) : null}
                     </p>
-                    <p className="text-xs text-slate-500">{formatRange(e.startAt, e.endAt)}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {formatRange(e.startAt, e.endAt)}
+                    </p>
                     {e.location ? (
-                      <p className="text-xs text-slate-500">場所: {e.location}</p>
+                      <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500">
+                        <Icon name="pin" className="h-3.5 w-3.5" />
+                        {e.location}
+                      </p>
                     ) : null}
                     {e.conferenceUrl ? (
-                      <p className="text-xs text-ocean-600">Meet: {e.conferenceUrl}</p>
+                      <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-ocean-600">
+                        <Icon name="online" className="h-3.5 w-3.5" />
+                        ビデオ通話のURLつき
+                      </p>
                     ) : null}
                     <p className="mt-1 text-2xs text-slate-400">
                       {e.source === "system"
-                        ? `extendedProperties.private.reservationId = ${e.privateReservationId}`
-                        : "私用予定（システムが作ったものではない）"}
+                        ? "このシステムがうつしたもの"
+                        : "Googleに入っていた私用の予定"}
                     </p>
                   </div>
                   {e.source === "system" && !e.isDeleted ? (
                     <form action={simulateExternalDeleteAction}>
                       <input type="hidden" name="googleEventId" value={e.googleEventId} />
-                      <button className="shrink-0 rounded-pill border border-slate-200 bg-surface px-2.5 py-1 text-2xs font-bold text-slate-600 transition hover:border-brand-300">
+                      <Button type="submit" variant="secondary" size="sm">
+                        <Icon name="trash" className="h-3.5 w-3.5" />
                         Google側で消してみる
-                      </button>
+                      </Button>
                     </form>
                   ) : null}
                 </div>
@@ -143,74 +173,69 @@ export default async function CalendarSyncPage() {
             ))}
           </Card>
         )}
-        <p className="mt-2 text-xs text-slate-500">
-          「Google側で消してみる」→「不整合を検知して復元する」の順に押すと、
-          <b>システム側を正としてイベントが復元される</b>ことを確認できます。
-        </p>
+        <div className="mt-2 flex gap-3 rounded-card border border-slate-200/80 bg-surface px-4 py-3.5">
+          <Icon name="help" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+          <p className="text-xs leading-relaxed text-slate-600">
+            <b>ためしてみてください。</b>「Google側で消してみる」を押したあと、上の
+            「ずれていないか確かめて、直す」を押すと、消えた予定がひとりでに戻ります。
+            うっかりスマホで消してしまっても、お仕事の予定は失われません。
+          </p>
+        </div>
       </section>
 
       <section>
-        <SectionTitle hint="Googleに入れた私用の予定は、予約を受け付けない時間になります">
-          私用予定を追加してみる
+        <SectionTitle hint="通院や家族の用事など、Googleに入れている予定を想定しています">
+          Google側に私用の予定を入れてみる
         </SectionTitle>
         <Card>
           <form action={simulatePersonalEventAction} className="flex flex-wrap items-end gap-3">
-            <label className="text-xs text-slate-500">
-              日付
+            <Field label="日にち">
               <input
                 type="date"
                 name="date"
                 defaultValue={addDays(todayStr(), 3)}
-                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
+                className={inputClass}
               />
-            </label>
-            <label className="text-xs text-slate-500">
-              開始
-              <input
-                type="time"
-                name="time"
-                defaultValue="13:00"
-                step={1800}
-                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-              />
-            </label>
-            <label className="text-xs text-slate-500">
-              長さ（分）
+            </Field>
+            <Field label="はじまる時間">
+              <input type="time" name="time" defaultValue="13:00" step={1800} className={inputClass} />
+            </Field>
+            <Field label="どのくらい" hint="分で入れてください">
               <input
                 type="number"
                 name="minutes"
                 defaultValue={90}
                 step={30}
-                className="mt-1 block w-24 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
+                className={`${inputClass} w-28`}
               />
-            </label>
-            <label className="min-w-[160px] flex-1 text-xs text-slate-500">
-              内容
-              <input
-                name="summary"
-                placeholder="通院"
-                className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-              />
-            </label>
-            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
-              Google側に追加
-            </button>
+            </Field>
+            <Field label="なんの予定" className="min-w-[180px] flex-1">
+              <input name="summary" placeholder="通院" className={inputClass} />
+            </Field>
+            <Button type="submit" variant="secondary">
+              <Icon name="plus" className="h-4 w-4" />
+              Google側に入れる
+            </Button>
           </form>
-          <p className="mt-2 text-xs text-slate-500">
-            追加したあと「私用予定を取り込む」を押すと、ブロック枠になって空き枠から外れます。
+          <p className="mt-3 text-xs leading-relaxed text-slate-500">
+            入れたあとに「Googleの私用予定を取りこむ」を押すと、その時間はお客様の予約画面から消えます。
+            なお、このシステムがうつした予定は取りこみません（同じものが二重になるのを防いでいます）。
           </p>
         </Card>
       </section>
 
       <section>
-        <SectionTitle>取り込んだ私用予定（ブロック枠）</SectionTitle>
+        <SectionTitle>取りこんだ私用の予定</SectionTitle>
         {blocks.length === 0 ? (
-          <Empty>取り込んだ予定はありません</Empty>
+          <Empty>まだ取りこんだ予定はありません</Empty>
         ) : (
           <Card className="divide-y divide-slate-100 p-0">
             {blocks.map((b) => (
-              <div key={b.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                <span>{b.title}</span>
+              <div key={b.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm">
+                <span className="inline-flex items-center gap-2 font-medium text-ink">
+                  <Icon name="clock" className="h-4 w-4 text-slate-400" />
+                  {b.title}
+                </span>
                 <span className="text-xs text-slate-500">{formatRange(b.startAt, b.endAt)}</span>
               </div>
             ))}
@@ -219,67 +244,71 @@ export default async function CalendarSyncPage() {
       </section>
 
       <section>
-        <SectionTitle>同期の状態</SectionTitle>
+        <SectionTitle hint="うまくうつせなかったものがないか、ここで確かめられます">
+          うつした記録
+        </SectionTitle>
         {syncs.length === 0 ? (
-          <Empty>同期の記録はありません</Empty>
+          <Empty>まだ記録はありません</Empty>
         ) : (
-          <Card className="scroll-x p-0">
-            <table className="w-full min-w-[720px] text-sm">
-              <thead className="border-b border-slate-200 bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
-                <tr>
-                  <th className="px-4 py-2.5 text-left">予約</th>
-                  <th className="px-4 py-2.5 text-left">状態</th>
-                  <th className="px-4 py-2.5 text-left">イベントID</th>
-                  <th className="px-4 py-2.5 text-right">リトライ</th>
-                  <th className="px-4 py-2.5 text-left">最終同期</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {syncs.map((s) => {
-                  const r = resMap.get(s.reservationId);
-                  const label = SYNC_LABEL[s.syncStatus] ?? SYNC_LABEL.pending;
-                  return (
-                    <tr key={s.id}>
-                      <td className="px-4 py-2">
-                        {r ? (
-                          <Link
-                            href={`/admin/reservations/${r.id}`}
-                            className="text-brand-600 hover:underline"
-                          >
-                            {r.customer.name} 様 / {r.menu.name}
-                          </Link>
-                        ) : (
-                          s.reservationId
-                        )}
-                      </td>
-                      <td className="px-4 py-2">
-                        <span className={`rounded px-2 py-0.5 text-2xs ${label.cls}`}>
-                          {label.label}
-                        </span>
-                        {s.lastError ? (
-                          <p className="mt-1 text-2xs text-bad-600">{s.lastError}</p>
-                        ) : null}
-                      </td>
-                      <td className="px-4 py-2 text-xs text-slate-500">{s.googleEventId ?? "-"}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">{s.retryCount}</td>
-                      <td className="px-4 py-2 text-xs text-slate-500">
-                        {s.lastSyncedAt
-                          ? s.lastSyncedAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })
-                          : "-"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </Card>
+          <TableShell minWidth={640}>
+            <thead>
+              <tr>
+                <Th>ご予約</Th>
+                <Th>ようす</Th>
+                <Th align="right">やり直した回数</Th>
+                <Th>さいごにうつした日時</Th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {syncs.map((s) => {
+                const r = resMap.get(s.reservationId);
+                const label = SYNC_LABEL[s.syncStatus] ?? SYNC_LABEL.pending;
+                return (
+                  <tr key={s.id}>
+                    <Td>
+                      {r ? (
+                        <Link
+                          href={`/admin/reservations/${r.id}`}
+                          className="font-medium text-brand-700 hover:underline"
+                        >
+                          {r.customer.name} 様 ／ {r.menu.name}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-500">（削除された予約）</span>
+                      )}
+                    </Td>
+                    <Td>
+                      <span className={`rounded-pill px-2.5 py-1 text-2xs font-bold ${label.cls}`}>
+                        {label.label}
+                      </span>
+                      {s.lastError ? (
+                        <p className="mt-1 text-2xs text-bad-600">{s.lastError}</p>
+                      ) : null}
+                    </Td>
+                    <Td align="right">{s.retryCount}</Td>
+                    <Td className="text-xs text-slate-500">
+                      {s.lastSyncedAt
+                        ? s.lastSyncedAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })
+                        : "—"}
+                    </Td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </TableShell>
         )}
       </section>
 
-      <ProvisionalNote>
-        本番接続に必要なもの: Google Cloud プロジェクトと Calendar API の有効化、OAuth クライアント、
-        オーナーのGoogleアカウントでの初回認可（リフレッシュトークンの取得）、書き出し先カレンダーの指定。
-      </ProvisionalNote>
+      <div className="flex gap-3 rounded-card border border-slate-200/80 bg-surface px-4 py-3.5">
+        <Icon name="help" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+        <div className="text-xs leading-relaxed text-slate-600">
+          <p className="font-bold text-ink">本物のGoogleカレンダーにつなぐには</p>
+          <p className="mt-1">
+            ふだんお使いのGoogleアカウントで一度だけ「このシステムにカレンダーを見せてもいいですか」に
+            はいと答えていただくだけです。あとは自動でうつります。この作業はこちらで代行できます。
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

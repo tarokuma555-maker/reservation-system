@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { lineMode } from "@/lib/line";
-import { Card, Empty, ProvisionalNote, SectionTitle } from "@/components/ui";
+import { Button, Card, Empty, Field, ModeBanner, SectionTitle, inputClass } from "@/components/ui";
 import { FlexPreview } from "@/components/FlexPreview";
 import { Icon, type IconName } from "@/components/Icon";
 import {
@@ -13,10 +13,31 @@ import {
 export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  sent: { label: "送信済", cls: "bg-good-600 text-white" },
-  mocked: { label: "送信したことにする", cls: "bg-slate-200 text-slate-700" },
-  failed: { label: "送信失敗", cls: "bg-bad-100 text-bad-700" },
-  queued: { label: "送信待ち", cls: "bg-warn-100 text-warn-700" },
+  sent: { label: "お届けずみ", cls: "bg-good-600 text-white" },
+  mocked: { label: "お試し（実際には送っていません）", cls: "bg-slate-200 text-slate-700" },
+  failed: { label: "届きませんでした", cls: "bg-bad-100 text-bad-700" },
+  queued: { label: "送信の順番待ち", cls: "bg-warn-100 text-warn-700" },
+};
+
+/** メッセージの種類を、ふだんの言葉に置きかえる */
+const TYPE_LABEL: Record<string, string> = {
+  booking_confirmed: "ご予約を承りました",
+  rescheduled: "日時の変更をお知らせ",
+  cancelled: "キャンセルをお知らせ",
+  skipped: "今回のお休みをお知らせ",
+  reminder: "前日のおしらせ",
+  online_soon: "オンライン開始前のおしらせ",
+  completed: "おわったあとのお礼",
+  invoice: "領収書のお届け",
+  welcome: "はじめましてのごあいさつ",
+};
+
+/** LINEから届く動きの種類 */
+const EVENT_LABEL: Record<string, string> = {
+  follow: "友だち追加",
+  unfollow: "ブロック",
+  message: "メッセージが届いた",
+  postback: "ボタンが押された",
 };
 
 export default async function MessagesPage() {
@@ -36,76 +57,80 @@ export default async function MessagesPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">LINE連携</h1>
-        <p className="text-sm text-slate-500">
-          送信したメッセージ、受信したLINEからのお知らせ、リッチメニューの管理
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">LINEの設定</h1>
+        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+          お客様にお送りするおしらせと、LINEの下に出るメニューをここで確かめられます。
         </p>
       </header>
 
-      <div
-        className={`rounded-lg border px-4 py-3 text-sm ${
-          live
-            ? "border-good-100 bg-good-50 text-good-700"
-            : "border-warn-100 bg-warn-50 text-warn-700"
-        }`}
+      <ModeBanner
+        live={live}
+        liveTitle="LINEにつながっています。実際にお客様へ届きます"
+        mockTitle="いまは お試しモード です（お客様には届きません）"
       >
-        <p className="font-bold">
-          {live ? "本番接続: 実際にLINEへ送信しています" : "お試しモード: LINEへは送信していません"}
-        </p>
-        {!live ? (
-          <p className="mt-1 text-xs leading-relaxed">
-            <code>LINE_CHANNEL_ACCESS_TOKEN</code> と <code>LINE_CHANNEL_SECRET</code>
-            を設定すると、コードを変えずに実接続に切り替わります。
-            お試しモードでも<b>実際に送る内容は同じもの</b>を組み立てて保存しているため、
-            下の内容がそのままお客様に届きます。
+        {live ? null : (
+          <p>
+            LINEの合いことば（アクセストークンとシークレット）を入れると、そのままお客様に届くようになります。
+            <b>お試し中でも、お送りする中身は本番とまったく同じもの</b>を作っています。
+            下に出ている見た目のまま、お客様のトーク画面に表示されます。
           </p>
-        ) : null}
-      </div>
+        )}
+      </ModeBanner>
 
       <section>
-        <SectionTitle hint="本番では毎日決まった時刻に自動で走ります">
-          通知バッチを手動で実行する
+        <SectionTitle hint="本番では、毎日決まった時間に自動で送られます">
+          いま、まとめて送る
         </SectionTitle>
         <Card className="flex flex-wrap gap-3">
           <form action={runReminderBatchAction}>
-            <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
-              明日の予約に前日リマインドを送る
-            </button>
+            <Button type="submit">
+              <Icon name="bell" className="h-4 w-4" />
+              明日のお客様に「前日のおしらせ」を送る
+            </Button>
           </form>
           <form action={runOnlineReminderBatchAction}>
-            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
-              オンライン開始前リマインドを送る
-            </button>
+            <Button type="submit" variant="secondary">
+              <Icon name="online" className="h-4 w-4" />
+              まもなく始まるオンラインのお客様に送る
+            </Button>
           </form>
         </Card>
       </section>
 
       <section>
-        <SectionTitle hint="お客様のトーク画面にそのまま表示されます">送信したメッセージ</SectionTitle>
+        <SectionTitle hint="お客様のトーク画面には、この見た目のまま表示されます">
+          これまでに送ったおしらせ
+        </SectionTitle>
         {messages.length === 0 ? (
-          <Empty>まだ送信していません</Empty>
+          <Empty>まだ1通も送っていません</Empty>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
             {messages.map((m) => {
               const s = STATUS_LABEL[m.status] ?? STATUS_LABEL.queued;
               return (
                 <Card key={m.id}>
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-ink">
-                      {m.customer.name} 様
-                      <span className="ml-2 text-xs font-normal text-slate-500">{m.type}</span>
-                    </p>
-                    <span className={`rounded px-2 py-0.5 text-2xs ${s.cls}`}>{s.label}</span>
+                  <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-ink">{m.customer.name} 様</p>
+                      <p className="text-2xs text-slate-500">{TYPE_LABEL[m.type] ?? m.type}</p>
+                    </div>
+                    <span className={`rounded-pill px-2.5 py-1 text-2xs font-bold ${s.cls}`}>
+                      {s.label}
+                    </span>
                   </div>
-                  <div className="rounded-lg bg-slate-100 p-3">
+                  <div className="rounded-xl bg-slate-100 p-3">
                     <FlexPreview payload={m.payload} />
                   </div>
                   {m.errorMessage ? (
-                    <p className="mt-2 text-xs text-bad-600">{m.errorMessage}</p>
+                    <p className="mt-2 flex items-start gap-1.5 text-xs text-bad-600">
+                      <Icon name="alert" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      {m.errorMessage}
+                    </p>
                   ) : null}
-                  <details className="mt-2">
-                    <summary className="cursor-pointer text-2xs text-slate-500">
-                      送信内容の詳細（開発の確認用）
+                  <details className="group mt-2">
+                    <summary className="flex cursor-pointer list-none items-center gap-1.5 text-2xs text-slate-400 transition hover:text-slate-600">
+                      <Icon name="chevronRight" className="h-3 w-3 transition group-open:rotate-90" />
+                      LINEに渡している中身を見る（ふだんは開かなくて大丈夫です）
                     </summary>
                     <pre className="mt-1 max-h-64 overflow-auto rounded-xl bg-slate-900 p-3.5 text-[10px] leading-relaxed text-brand-100">
                       {m.payload}
@@ -119,59 +144,47 @@ export default async function MessagesPage() {
       </section>
 
       <section>
-        <SectionTitle hint="なりすましを防ぐ確認をしてから処理します。同じお知らせが二重に届いても一度しか処理しません">
-          LINEから届いたお知らせ
+        <SectionTitle hint="お客様がLINEで何かしたときに、こちらへ届く合図です">
+          LINEから届いた動き
         </SectionTitle>
-        <Card className="space-y-3">
-          <form action={simulateWebhookAction} className="flex flex-wrap items-end gap-2">
-            <label className="text-xs text-slate-500">
-              種別
-              <select
-                name="eventType"
-                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-              >
-                <option value="follow">follow（友だち追加）</option>
-                <option value="message">message（メッセージ受信）</option>
-                <option value="postback">postback（ボタン操作）</option>
-                <option value="unfollow">unfollow（ブロック）</option>
+        <Card className="space-y-4">
+          <form action={simulateWebhookAction} className="flex flex-wrap items-end gap-3">
+            <Field label="どんな動き">
+              <select name="eventType" className={inputClass}>
+                <option value="follow">友だち追加された</option>
+                <option value="message">メッセージが届いた</option>
+                <option value="postback">ボタンが押された</option>
+                <option value="unfollow">ブロックされた</option>
               </select>
-            </label>
-            <label className="text-xs text-slate-500">
-              ユーザー
-              <select
-                name="lineUserId"
-                className="mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-              >
+            </Field>
+            <Field label="どのお客様">
+              <select name="lineUserId" className={inputClass}>
                 {customers.map((c) => (
                   <option key={c.id} value={c.lineUserId}>
                     {c.name}
                   </option>
                 ))}
-                <option value="U_demo_newcomer">（未登録の新しいユーザー）</option>
+                <option value="U_demo_newcomer">（はじめての方）</option>
               </select>
-            </label>
-            <label className="min-w-[160px] flex-1 text-xs text-slate-500">
-              本文 / postbackデータ
-              <input
-                name="text"
-                placeholder="予約を変更したいです"
-                className="mt-1 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-              />
-            </label>
-            <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
-              テストで送ってみる
-            </button>
+            </Field>
+            <Field label="メッセージの中身" className="min-w-[180px] flex-1">
+              <input name="text" placeholder="予約を変更したいです" className={inputClass} />
+            </Field>
+            <Button type="submit" variant="secondary">
+              <Icon name="send" className="h-4 w-4" />
+              ためしに起こしてみる
+            </Button>
           </form>
 
           {events.length === 0 ? (
-            <p className="text-sm text-slate-500">まだ受信していません</p>
+            <p className="text-sm text-slate-500">まだ何も届いていません</p>
           ) : (
             <ul className="divide-y divide-slate-100 text-sm">
               {events.map((e) => (
-                <li key={e.id} className="py-2">
-                  <p className="font-medium text-slate-700">
-                    {e.type}
-                    <span className="ml-2 text-xs font-normal text-slate-400">
+                <li key={e.id} className="py-2.5">
+                  <p className="font-bold text-slate-700">
+                    {EVENT_LABEL[e.type] ?? e.type}
+                    <span className="ml-2 text-2xs font-normal text-slate-400">
                       {e.receivedAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
                     </span>
                   </p>
@@ -180,56 +193,60 @@ export default async function MessagesPage() {
               ))}
             </ul>
           )}
+
+          <p className="flex items-start gap-1.5 border-t border-slate-100 pt-3 text-2xs leading-relaxed text-slate-500">
+            <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+            <span>
+              本物のLINEから届いたものかどうかを毎回たしかめてから受け取っています。
+              また、同じ合図が二重に届いても、処理は一度きりです（お客様に同じおしらせが2通いくのを防ぎます）。
+            </span>
+          </p>
         </Card>
       </section>
 
       <section>
-        <SectionTitle hint="未予約の方と予約がある方でメニューを出し分けます">
-          リッチメニュー
+        <SectionTitle hint="はじめての方と、すでにご予約がある方で、出すメニューを変えられます">
+          LINEの下に出るメニュー
         </SectionTitle>
         <div className="grid gap-4 lg:grid-cols-2">
           {richMenus.map((rm) => {
             const areas = JSON.parse(rm.areas) as { label: string; icon: IconName; path: string }[];
             return (
               <Card key={rm.id}>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-bold text-ink">{rm.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {rm.target === "default" ? "未予約の方向け" : "予約がある方向け"} ／ トークバー「
-                      {rm.chatBarText}」
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-ink">{rm.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {rm.target === "default" ? "はじめての方に出します" : "ご予約がある方に出します"}
+                    </p>
+                    <p className="text-2xs text-slate-400">
+                      入力欄の上には「{rm.chatBarText}」と表示されます
                     </p>
                   </div>
                   {rm.isPublished ? (
-                    <span className="rounded bg-brand-500 px-2 py-0.5 text-2xs text-white">
+                    <span className="shrink-0 rounded-pill bg-good-600 px-2.5 py-1 text-2xs font-bold text-white">
                       公開中
                     </span>
                   ) : null}
                 </div>
 
-                <div className="mt-3 grid grid-cols-3 gap-1 overflow-hidden rounded-lg border border-slate-200">
+                <div className="mt-3.5 grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-slate-200">
                   {areas.map((a) => (
                     <div
                       key={a.path}
-                      className="flex flex-col items-center gap-1 bg-brand-50 py-4 text-center"
+                      className="flex flex-col items-center gap-1.5 bg-brand-50 py-5 text-center"
                     >
                       <Icon name={a.icon} className="h-5 w-5 text-brand-600" />
-                      <span className="text-2xs text-slate-700">{a.label}</span>
+                      <span className="text-2xs font-medium text-slate-700">{a.label}</span>
                     </div>
                   ))}
                 </div>
 
-                {rm.lineRichMenuId ? (
-                  <p className="mt-2 text-2xs text-slate-500">
-                    richMenuId: {rm.lineRichMenuId}
-                  </p>
-                ) : null}
-
                 <form action={publishRichMenuAction} className="mt-3">
                   <input type="hidden" name="richMenuId" value={rm.id} />
-                  <button className="w-full rounded-pill border border-slate-200 bg-surface py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
-                    このメニューを登録して公開する
-                  </button>
+                  <Button type="submit" variant="secondary" className="w-full">
+                    このメニューをLINEに出す
+                  </Button>
                 </form>
               </Card>
             );
@@ -237,11 +254,17 @@ export default async function MessagesPage() {
         </div>
       </section>
 
-      <ProvisionalNote>
-        本番接続に必要なもの: LINE Developers でのMessaging APIチャネル作成、チャネルアクセストークンと
-        チャネルシークレット、LINEからのお知らせ URL（<code>/api/line/webhook</code>）の登録、LIFFアプリの作成。
-        リッチメニューの画像（2500×1686）は別途ご用意ください。
-      </ProvisionalNote>
+      <div className="flex gap-3 rounded-card border border-slate-200/80 bg-surface px-4 py-3.5">
+        <Icon name="help" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+        <div className="text-xs leading-relaxed text-slate-600">
+          <p className="font-bold text-ink">本物のLINEにつなぐには</p>
+          <p className="mt-1">
+            LINE公式アカウントの管理ページで「合いことば」を2つ発行し、この画面の設定に入れるだけです。
+            そのほかに、メニューの背景画像（よこ2500 × たて1686 の絵）を1枚ご用意ください。
+            この作業はこちらで代行できます。
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

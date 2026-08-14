@@ -1,19 +1,28 @@
 import { prisma } from "@/lib/db";
-import { Card, Empty, SectionTitle } from "@/components/ui";
+import { Button, Card, Empty, Field, SectionTitle, inputClass } from "@/components/ui";
+import { Icon } from "@/components/Icon";
 import { formatYen, todayStr } from "@/lib/time";
 import { deleteDocumentAction } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
 const KIND_LABEL: Record<string, string> = {
-  issued_invoice: "交付した請求書・領収書の写し",
+  issued_invoice: "お客様にお渡しした領収書の控え",
   received_receipt: "受け取ったレシート",
   received_invoice: "受け取った請求書",
 };
 
+const ACTION_LABEL: Record<string, string> = {
+  create: "保管しました",
+  view: "見ました",
+  delete_rejected: "削除しようとしましたが、まだ捨てられません",
+  delete: "削除しました",
+  update: "内容を直しました",
+};
+
 /**
  * レシート・書類の保管。
- * 電子帳簿保存法の検索要件（取引年月日・取引金額・取引先）で絞り込める。
+ * 法律（電子帳簿保存法）が求める3つの手がかり — いつ・いくら・どこ — で探せるようにしている。
  */
 export default async function DocumentsPage({
   searchParams,
@@ -21,6 +30,7 @@ export default async function DocumentsPage({
   searchParams: Promise<{ from?: string; to?: string; min?: string; max?: string; party?: string }>;
 }) {
   const q = await searchParams;
+  const filtered = Boolean(q.from || q.to || q.min || q.max || q.party);
 
   const documents = await prisma.document.findMany({
     where: {
@@ -48,110 +58,156 @@ export default async function DocumentsPage({
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">レシート・書類の保管</h1>
-        <p className="text-sm text-slate-500">
-          電子帳簿保存法の要件に沿って保存しています（訂正削除の履歴を残し、保存期限内は削除できません）
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">レシートの保管</h1>
+        <p className="mt-1 text-sm leading-relaxed text-slate-500">
+          レシートや領収書は、法律で<b>7年間とっておく</b>ことが決まっています。
+          紙で箱にためておく代わりに、ここに入れておけば「いつ・いくら・どこの」で探せます。
         </p>
       </header>
 
       <section>
-        <SectionTitle hint="日付と金額は範囲で、取引先は部分一致で検索できます">
-          検索（法令が求める3項目）
+        <SectionTitle hint="どれか1つだけでも探せます。空けたところは指定なしになります">
+          さがす
         </SectionTitle>
         <Card>
           <form className="flex flex-wrap items-end gap-3">
-            <label className="text-xs text-slate-500">
-              取引年月日（から）
-              <input type="date" name="from" defaultValue={q.from} className={inputCls} />
-            </label>
-            <label className="text-xs text-slate-500">
-              （まで）
-              <input type="date" name="to" defaultValue={q.to} className={inputCls} />
-            </label>
-            <label className="text-xs text-slate-500">
-              金額（以上）
-              <input type="number" name="min" defaultValue={q.min} className={`${inputCls} w-28`} />
-            </label>
-            <label className="text-xs text-slate-500">
-              （以下）
-              <input type="number" name="max" defaultValue={q.max} className={`${inputCls} w-28`} />
-            </label>
-            <label className="min-w-[160px] flex-1 text-xs text-slate-500">
-              取引先
-              <input name="party" defaultValue={q.party} className={`${inputCls} w-full`} />
-            </label>
-            <button className="rounded-pill bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
-              検索
-            </button>
-            <a href="/admin/documents" className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300">
-              条件をクリア
-            </a>
+            <Field label="いつ（この日から）">
+              <input type="date" name="from" defaultValue={q.from} className={inputClass} />
+            </Field>
+            <Field label="（この日まで）">
+              <input type="date" name="to" defaultValue={q.to} className={inputClass} />
+            </Field>
+            <Field label="いくら（これ以上）">
+              <input
+                type="number"
+                name="min"
+                defaultValue={q.min}
+                placeholder="1000"
+                className={`${inputClass} w-32`}
+              />
+            </Field>
+            <Field label="（これ以下）">
+              <input
+                type="number"
+                name="max"
+                defaultValue={q.max}
+                placeholder="50000"
+                className={`${inputClass} w-32`}
+              />
+            </Field>
+            <Field label="どこの" hint="一部だけでも見つかります" className="min-w-[180px] flex-1">
+              <input
+                name="party"
+                defaultValue={q.party}
+                placeholder="カインズ など"
+                className={inputClass}
+              />
+            </Field>
+            <Button type="submit">
+              <Icon name="search" className="h-4 w-4" />
+              さがす
+            </Button>
+            {filtered ? (
+              <a
+                href="/admin/documents"
+                className="inline-flex items-center gap-1.5 rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300"
+              >
+                <Icon name="close" className="h-3.5 w-3.5" />
+                ぜんぶ表示
+              </a>
+            ) : null}
           </form>
         </Card>
       </section>
 
       <section>
-        <SectionTitle hint={`${documents.length}件`}>保存されている書類</SectionTitle>
+        <SectionTitle hint={filtered ? `${documents.length}件 見つかりました` : `${documents.length}件`}>
+          保管しているもの
+        </SectionTitle>
         {documents.length === 0 ? (
-          <Empty>見つかりませんでした</Empty>
+          <Empty>
+            {filtered
+              ? "その条件では見つかりませんでした。条件をゆるめてみてください。"
+              : "まだ何も入っていません。"}
+          </Empty>
         ) : (
           <div className="space-y-3">
-            {documents.map((d) => (
-              <Card key={d.id}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink">{d.counterpartyName}</p>
-                    <p className="text-xs text-slate-500">
-                      {KIND_LABEL[d.kind] ?? d.kind} ／ 取引年月日 {d.transactionDate}
-                    </p>
-                    <p className="mt-1 break-all text-2xs text-slate-400">{d.filePath}</p>
-                    {d.fileHash ? (
-                      <p className="text-2xs text-slate-400">
-                        SHA-256: {d.fileHash.slice(0, 16)}…（改ざん検知用）
+            {documents.map((d) => {
+              const locked = d.retentionUntil >= today;
+              return (
+                <Card key={d.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex min-w-0 gap-3.5">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                        <Icon name="folder" className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-ink">{d.counterpartyName}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {KIND_LABEL[d.kind] ?? d.kind} ／ {d.transactionDate} のお取引
+                        </p>
+                        {d.fileHash ? (
+                          <p className="mt-1 inline-flex items-center gap-1 text-2xs text-slate-400">
+                            <Icon name="check" className="h-3 w-3" />
+                            中身が書きかえられていないか、いつでも確かめられます
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-bold tabular-nums text-ink">
+                        {formatYen(d.transactionAmount)}
                       </p>
-                    ) : null}
+                      <p className="mt-0.5 text-2xs text-slate-500">
+                        {d.retentionUntil} まで とっておきます
+                      </p>
+                    </div>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-medium tabular-nums">{formatYen(d.transactionAmount)}</p>
-                    <p className="text-2xs text-slate-500">保存期限 {d.retentionUntil}</p>
-                  </div>
-                </div>
 
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2">
-                  <ul className="space-y-0.5 text-2xs text-slate-500">
-                    {d.logs.map((l) => (
-                      <li key={l.id}>
-                        {l.action} ／ {l.detail || "—"} ／{" "}
-                        {l.createdAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
-                      </li>
-                    ))}
-                  </ul>
-                  <form action={deleteDocumentAction} className="flex items-center gap-2">
-                    <input type="hidden" name="documentId" value={d.id} />
-                    <input type="hidden" name="reason" value="管理画面からの削除操作" />
-                    <button
-                      className="rounded-pill border border-slate-200 bg-surface px-3 py-1.5 text-2xs font-bold text-slate-600 transition hover:border-brand-300"
-                      title={
-                        d.retentionUntil >= today
-                          ? "保存期限内のため削除できません"
-                          : "論理削除します"
-                      }
-                    >
-                      削除してみる
-                    </button>
-                  </form>
-                </div>
-              </Card>
-            ))}
+                  <div className="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3">
+                    <ul className="space-y-0.5 text-2xs text-slate-500">
+                      {d.logs.map((l) => (
+                        <li key={l.id} className="flex items-center gap-1.5">
+                          <span className="h-1 w-1 rounded-full bg-slate-300" aria-hidden />
+                          {ACTION_LABEL[l.action] ?? l.action}
+                          {l.detail ? `（${l.detail}）` : ""} ／{" "}
+                          {l.createdAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+                        </li>
+                      ))}
+                    </ul>
+                    <form action={deleteDocumentAction}>
+                      <input type="hidden" name="documentId" value={d.id} />
+                      <input type="hidden" name="reason" value="管理画面からの削除操作" />
+                      <Button
+                        type="submit"
+                        variant="danger"
+                        size="sm"
+                        title={
+                          locked
+                            ? "まだ7年たっていないので、押しても捨てられません"
+                            : "保存の期限が過ぎているので捨てられます"
+                        }
+                      >
+                        <Icon name="trash" className="h-3.5 w-3.5" />
+                        捨ててみる
+                      </Button>
+                    </form>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
-        <p className="mt-2 text-xs text-slate-500">
-          「削除してみる」を押すと、<b>保存期限内は削除が拒否され、その操作自体が履歴に残ります</b>。
-          これが電子帳簿保存法の「真実性の確保」にあたる部分です。
-        </p>
+
+        <div className="mt-3 flex gap-3 rounded-card border border-slate-200/80 bg-surface px-4 py-3.5">
+          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+          <p className="text-xs leading-relaxed text-slate-600">
+            「捨ててみる」を押しても、<b>7年たっていないものは捨てられません</b>。
+            そして「捨てようとした」ことまで記録に残ります。
+            うっかり消してしまう事故を防ぎ、あとから見た人が経緯をたどれるようにするための仕組みです。
+          </p>
+        </div>
       </section>
     </div>
   );
 }
-
-const inputCls = "mt-1 block rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm";
