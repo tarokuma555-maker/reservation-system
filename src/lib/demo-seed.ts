@@ -295,7 +295,7 @@ export async function seedDemoData() {
     });
   };
 
-  // 本日の予定（訪問 → オンラインの並びで、移動バッファの効き方が見える）
+  // 本日の予定（訪問 → オンラインの並びで、移動余裕時間の効き方が見える）
   await mk(c.yamada.id, m.clean3, today, "09:30", "confirmed", "東京都目黒区上目黒1-5-2");
   await mk(c.kobayashi.id, m.consultOnline60, today, "16:00");
 
@@ -385,12 +385,12 @@ export async function seedDemoData() {
       target: "default",
       chatBarText: "メニュー",
       areas: JSON.stringify([
-        { label: "はじめての方へ", icon: "👋", path: "" },
-        { label: "料金・メニュー", icon: "📋", path: "/menus" },
-        { label: "予約する", icon: "📅", path: "/menus" },
-        { label: "定期利用", icon: "🔁", path: "/recurring/new" },
-        { label: "よくある質問", icon: "❓", path: "" },
-        { label: "お問い合わせ", icon: "💬", path: "" },
+        { label: "はじめての方へ", icon: "sparkle", path: "" },
+        { label: "料金・メニュー", icon: "list", path: "/menus" },
+        { label: "予約する", icon: "calendar", path: "/menus" },
+        { label: "定期利用", icon: "repeat", path: "/recurring/new" },
+        { label: "よくある質問", icon: "help", path: "" },
+        { label: "お問い合わせ", icon: "chat", path: "" },
       ]),
     },
   });
@@ -400,12 +400,12 @@ export async function seedDemoData() {
       target: "booked",
       chatBarText: "予約メニュー",
       areas: JSON.stringify([
-        { label: "次回の予約", icon: "✅", path: "/reservations" },
-        { label: "予約を変更", icon: "🔄", path: "/reservations" },
-        { label: "キャンセル", icon: "✖️", path: "/reservations" },
-        { label: "定期利用の管理", icon: "🔁", path: "/recurring" },
-        { label: "新しく予約", icon: "📅", path: "/menus" },
-        { label: "領収書", icon: "🧾", path: "/invoices" },
+        { label: "次回の予約", icon: "calendarCheck", path: "/reservations" },
+        { label: "予約を変更", icon: "edit", path: "/reservations" },
+        { label: "キャンセル", icon: "close", path: "/reservations" },
+        { label: "定期利用の管理", icon: "repeat", path: "/recurring" },
+        { label: "新しく予約", icon: "calendar", path: "/menus" },
+        { label: "領収書", icon: "receipt", path: "/invoices" },
       ]),
     },
   });
@@ -523,8 +523,8 @@ export async function seedDemoData() {
   log(`定期ルール1（毎週火曜・訪問）: ${g1.created}件を生成`);
   log(`定期ルール2（毎月第2土曜・オンライン）: ${g2.created}件を生成`);
   log(`カレンダーへ書き出し: ${toSync.length}件`);
-  log(`会計: 勘定科目 ${(await prisma.account.count())}件 / 仕訳 ${(await prisma.journalEntry.count())}件 / 証憑 ${(await prisma.document.count())}件`);
-  log(`LINE通知: ${(await prisma.outboundMessage.count())}件（モック送信）`);
+  log(`会計: 勘定科目 ${(await prisma.account.count())}件 / 仕訳 ${(await prisma.journalEntry.count())}件 / レシート・書類 ${(await prisma.document.count())}件`);
+  log(`LINE通知: ${(await prisma.outboundMessage.count())}件（送信したことにする）`);
   if (g1.conflicts.length || g2.conflicts.length) {
     log(`要調整: ${[...g1.conflicts, ...g2.conflicts].join(" / ")}`);
   }

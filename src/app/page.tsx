@@ -47,7 +47,7 @@ export default async function Home() {
             href="/admin"
             eyebrow="オーナー側"
             title="管理画面"
-            body="スケジュール管理、定期予約のイレギュラー対応、インボイス発行、経費と証憑、帳簿と決算書。"
+            body="スケジュール管理、定期予約のイレギュラー対応、インボイス発行、経費とレシート・書類、帳簿と決算書。"
           />
         </div>
 
@@ -67,12 +67,12 @@ export default async function Home() {
             <Point
               n="03"
               title="適格請求書とPDF"
-              body="法定6項目を検証し、税率ごとに1回だけ端数処理します。PDFは実際に生成され、証憑として保存されます。"
+              body="法定6項目を検証し、税率ごとに1回だけ1円未満の扱いします。PDFは実際に生成され、レシート・書類として保存されます。"
             />
             <Point
               n="04"
               title="帳簿から決算書まで"
-              body="予約と経費が自動で仕訳になり、試算表・計算書類4表・消費税集計まで積み上がります。"
+              body="予約と経費が自動で仕訳になり、科目ごとの残高・計算書類4表・消費税集計まで積み上がります。"
             />
           </div>
         </section>
@@ -80,13 +80,13 @@ export default async function Home() {
         <section className="mt-12 rounded-card border border-slate-200/80 bg-surface p-6 shadow-card">
           <h2 className="text-sm font-bold tracking-tight text-ink">外部連携のいまの状態</h2>
           <p className="mt-1 text-xs leading-relaxed text-slate-600">
-            認証情報が未設定のあいだはモックで動きます。送信するJSONやカレンダーの状態は同じものを組み立てているため、
+            つなぎこみの設定が済むまでは「お試し」で動きます。送る中身は本番とまったく同じものを組み立てているため、
             <b>いま見えている挙動がそのまま本番の挙動</b>です。
           </p>
           <ul className="mt-4 grid gap-2 sm:grid-cols-3">
             <ModeChip label="LINE Messaging API" mode={lineMode()} />
             <ModeChip label="Googleカレンダー" mode={googleMode()} />
-            <ModeChip label="レシートOCR" mode={ocrMode()} />
+            <ModeChip label="レシートの読み取り" mode={ocrMode()} />
           </ul>
         </section>
 
@@ -175,7 +175,7 @@ function ModeChip({ label, mode }: { label: string; mode: "live" | "mock" }) {
         aria-hidden
       />
       {label}
-      <span className="ml-auto font-medium text-slate-500">{live ? "接続中" : "モック"}</span>
+      <span className="ml-auto font-medium text-slate-500">{live ? "つながっています" : "お試し"}</span>
     </li>
   );
 }

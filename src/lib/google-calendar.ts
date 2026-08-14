@@ -80,11 +80,11 @@ async function buildEventInput(reservationId: string): Promise<EventInput> {
     include: { customer: true, menu: true, options: true },
   });
 
-  const icon = r.deliveryType === "visit" ? "🏠" : "💻";
+  const label = r.deliveryType === "visit" ? "訪問" : "オンライン";
   const appUrl = process.env.APP_BASE_URL ?? "http://localhost:3000";
 
   return {
-    summary: `${icon} ${r.customer.name}様 / ${r.menu.name}`,
+    summary: `【${label}】${r.customer.name}様 / ${r.menu.name}`,
     description: [
       `お客様: ${r.customer.name}様${r.customer.companyName ? `（${r.customer.companyName}）` : ""}`,
       `電話: ${r.customer.phone}`,

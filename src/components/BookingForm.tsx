@@ -194,7 +194,7 @@ export default function BookingForm({ customerId, menu, options, dates, dateLabe
         <h2 className="mb-2 font-bold text-ink">ご予約内容</h2>
         <dl className="space-y-1 text-slate-700">
           <Row label="メニュー" value={menu.name} />
-          <Row label="提供形態" value={menu.deliveryType === "visit" ? "🏠 ご自宅への訪問" : "💻 オンライン"} />
+          <Row label="ご利用方法" value={menu.deliveryType === "visit" ? "ご自宅にうかがいます" : "オンライン（ビデオ通話）"} />
           <Row label="日時" value={time ? `${date} ${time}〜` : "未選択"} />
           <Row label="所要時間" value={`約${totalMinutes}分`} />
           <Row label="合計金額" value={`${yen(totalPrice)}（税込）`} />

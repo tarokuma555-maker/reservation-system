@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getCurrentCustomer } from "@/lib/session";
 import { DeliveryBadge } from "@/components/ui";
+import { Icon, type IconName } from "@/components/Icon";
 import { formatRange, formatYen, now, toTimeStr } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -82,23 +83,24 @@ export default async function LiffHome() {
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Tile
-          href="/liff/menus"
-          title="予約する"
-          sub="メニューから選ぶ"
-          accent
-        />
+        <Tile href="/liff/menus" icon="calendar" title="予約する" sub="メニューから選びます" accent />
         <Tile
           href="/liff/recurring"
-          title="定期利用"
-          sub={activeRules > 0 ? `${activeRules}件ご利用中` : "はじめる"}
+          icon="repeat"
+          title="定期でのご利用"
+          sub={activeRules > 0 ? `${activeRules}件ご利用中` : "毎回の予約が不要になります"}
         />
-        <Tile href="/liff/reservations" title="予約の確認" sub={`これまで${doneCount}回`} />
-        <Tile href="/liff/invoices" title="領収書" sub="発行済みの書類" />
+        <Tile
+          href="/liff/reservations"
+          icon="calendarCheck"
+          title="ご予約の確認"
+          sub={doneCount > 0 ? `これまで${doneCount}回ご利用` : "変更・キャンセルもこちら"}
+        />
+        <Tile href="/liff/invoices" icon="receipt" title="領収書" sub="発行済みの書類" />
       </div>
 
       <section className="rounded-card border border-slate-200/80 bg-surface p-5 shadow-card">
-        <h2 className="text-sm font-bold tracking-tight text-ink">ご利用の流れ</h2>
+        <h2 className="text-sm font-bold tracking-tight text-ink">はじめての方へ・ご利用の流れ</h2>
         <ol className="mt-3 space-y-3">
           {[
             { n: "1", t: "メニューを選ぶ", d: "訪問とオンラインから選べます" },
@@ -141,11 +143,13 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function Tile({
   href,
+  icon,
   title,
   sub,
   accent,
 }: {
   href: string;
+  icon: IconName;
   title: string;
   sub: string;
   accent?: boolean;
@@ -159,9 +163,15 @@ function Tile({
           : "border-slate-200/80 bg-surface hover:border-brand-200"
       }`}
     >
-      <p className="text-sm font-bold tracking-tight text-ink">{title}</p>
-      <p className="mt-0.5 text-2xs text-slate-500">{sub}</p>
-      <p className="mt-3 text-2xs font-bold text-brand-600">開く →</p>
+      <span
+        className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+          accent ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-600"
+        }`}
+      >
+        <Icon name={icon} className="h-4.5 w-4.5" />
+      </span>
+      <p className="mt-2.5 text-sm font-bold tracking-tight text-ink">{title}</p>
+      <p className="mt-0.5 text-2xs leading-relaxed text-slate-500">{sub}</p>
     </Link>
   );
 }

@@ -4,6 +4,7 @@ import { getCurrentCustomer } from "@/lib/session";
 import { getSettings } from "@/lib/settings";
 import { isServiceableArea } from "@/lib/availability";
 import { DeliveryBadge } from "@/components/ui";
+import { Icon, type IconName } from "@/components/Icon";
 import { formatYen } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -46,8 +47,8 @@ export default async function MenusPage({
 
       <div className="flex gap-2">
         <FilterTab href="/liff/menus" label="すべて" active={!type} />
-        <FilterTab href="/liff/menus?type=visit" label="訪問" active={type === "visit"} />
-        <FilterTab href="/liff/menus?type=online" label="オンライン" active={type === "online"} />
+        <FilterTab href="/liff/menus?type=visit" label="ご自宅へ訪問" icon="visit" active={type === "visit"} />
+        <FilterTab href="/liff/menus?type=online" label="オンライン" icon="online" active={type === "online"} />
       </div>
 
       {!canVisit ? (
@@ -114,14 +115,27 @@ export default async function MenusPage({
   );
 }
 
-function FilterTab({ href, label, active }: { href: string; label: string; active: boolean }) {
+function FilterTab({
+  href,
+  label,
+  icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon?: IconName;
+  active: boolean;
+}) {
   return (
     <Link
       href={href}
-      className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-        active ? "bg-brand-600 text-white" : "border border-slate-300 bg-surface text-slate-600"
+      className={`inline-flex items-center gap-1.5 rounded-pill px-3.5 py-2 text-xs font-bold transition ${
+        active
+          ? "bg-brand-600 text-white"
+          : "border border-slate-200 bg-surface text-slate-600 hover:border-brand-300"
       }`}
     >
+      {icon ? <Icon name={icon} className="h-3.5 w-3.5" /> : null}
       {label}
     </Link>
   );

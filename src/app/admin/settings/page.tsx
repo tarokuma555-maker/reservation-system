@@ -1,216 +1,351 @@
 import { getSettings } from "@/lib/settings";
 import { updateSettingsAction } from "@/app/actions";
-import { Card, ProvisionalNote, SectionTitle } from "@/components/ui";
+import { Card, SectionTitle } from "@/components/ui";
+import { Icon } from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * 設定画面。
+ *
+ * 「何をどう変えると、どこがどう変わるのか」が読むだけで分かることを最優先にしている。
+ * 専門用語をそのまま項目名にせず、日常の言葉で書いたうえで、
+ * 例と「変えるとこうなる」を必ず添える。
+ * 税務の判断が必要なものは下の方にまとめ、税理士さんと決める項目だと明記する。
+ */
 export default async function SettingsPage() {
   const s = await getSettings();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">設定</h1>
-        <p className="text-sm text-slate-500">
-          決まっていない項目は仮置きのままで動きます。決まり次第ここで差し替えてください。
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">お店の設定</h1>
+        <p className="mt-1 text-sm leading-relaxed text-slate-600">
+          ここを変えると、お客様に見える空き時間や、発行する書類の中身がすぐ変わります。
+          迷ったらそのままで大丈夫です。あとからいつでも変えられます。
         </p>
       </header>
 
-      <ProvisionalNote>
-        <b>いま仮置きになっている項目</b>: 事業者名 / 登録番号 / 決算月 / 課税方式 / 拠点住所 /
-        移動バッファ / 受付締切 / 1日の上限件数 / 対応エリア。
-        変更するとその場で空き枠の計算や書類の表示に反映されます。
-      </ProvisionalNote>
+      <div className="flex gap-3 rounded-card border border-warn-100 bg-warn-50 px-4 py-3">
+        <Icon name="info" className="mt-0.5 h-4 w-4 text-warn-600" />
+        <p className="text-xs leading-relaxed text-warn-700">
+          いまは<b>すべて仮の値</b>が入っています。実際の料金・営業時間・登録番号が決まったら、
+          ここを書き換えてください。
+        </p>
+      </div>
 
       <form action={updateSettingsAction} className="space-y-6">
+        {/* ------------ お店の情報 ------------ */}
         <Card>
-          <SectionTitle hint="発行する書類に印字されます">事業者情報（インボイス）</SectionTitle>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="事業者名" name="issuerName" defaultValue={s.issuerName} />
+          <SectionTitle hint="領収書や請求書に、そのまま印字されます">お店の情報</SectionTitle>
+          <div className="grid gap-5 sm:grid-cols-2">
             <Field
-              label="適格請求書発行事業者の登録番号"
+              label="お店の名前"
+              name="issuerName"
+              defaultValue={s.issuerName}
+              help="発行する書類の右上に出ます"
+            />
+            <Field
+              label="インボイスの登録番号"
               name="registrationNumber"
               defaultValue={s.registrationNumber}
-              hint="T + 数字13桁。形式が違うと発行できません"
+              help="「T」ではじまる14文字です。税務署からの通知書に書かれています"
+              example="例: T1234567890123"
             />
+          </div>
+          <Field
+            className="mt-5"
+            label="拠点の住所（自宅や事務所）"
+            name="baseAddress"
+            defaultValue={s.baseAddress}
+            help="オンライン相談をする場所であり、訪問先との行き来にかかる時間を計算する起点になります"
+          />
+        </Card>
+
+        {/* ------------ 移動時間 ------------ */}
+        <Card>
+          <SectionTitle hint="ここを長くすると予約と予約の間隔が広がり、短くすると詰められます">
+            移動にかかる時間
+          </SectionTitle>
+          <p className="mb-4 text-xs leading-relaxed text-slate-600">
+            前のお仕事と次のお仕事の<b>組み合わせ</b>によって、必要な移動時間は変わります。
+            オンラインは拠点から行うので、移動がいらない組み合わせもあります。
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <BufferField
+              from="訪問"
+              to="訪問"
+              note="おうちからおうちへ移動します"
+              name="visit_visit"
+              value={s.travelBuffer.visit_visit}
+            />
+            <BufferField
+              from="訪問"
+              to="オンライン"
+              note="拠点に戻ってから始めます"
+              name="visit_online"
+              value={s.travelBuffer.visit_online}
+            />
+            <BufferField
+              from="オンライン"
+              to="訪問"
+              note="拠点から出発します"
+              name="online_visit"
+              value={s.travelBuffer.online_visit}
+            />
+            <BufferField
+              from="オンライン"
+              to="オンライン"
+              note="移動なし。切り替えの時間だけです"
+              name="online_online"
+              value={s.travelBuffer.online_online}
+            />
+          </div>
+
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <Field
+              label="お仕事のまえの準備時間"
+              name="prepBeforeMinutes"
+              type="number"
+              unit="分"
+              defaultValue={String(s.prepBeforeMinutes)}
+              help="道具の用意やご挨拶にあてる時間です"
+            />
+            <Field
+              label="お仕事のあとの片付け時間"
+              name="prepAfterMinutes"
+              type="number"
+              unit="分"
+              defaultValue={String(s.prepAfterMinutes)}
+              help="片付けや記録を書く時間です"
+            />
+          </div>
+        </Card>
+
+        {/* ------------ 予約の受け付け方 ------------ */}
+        <Card>
+          <SectionTitle hint="お客様の画面に出る「選べる時間」が変わります">予約の受け付け方</SectionTitle>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field
+              label="訪問は何時間前まで受け付ける？"
+              name="cutoff_visit"
+              type="number"
+              unit="時間前まで"
+              defaultValue={String(s.cutoffHours.visit)}
+              help="これより直前の時間は、お客様の画面に出なくなります"
+              example="例: 24 と入れると、前日の同じ時刻までの受付になります"
+            />
+            <Field
+              label="オンラインは何時間前まで？"
+              name="cutoff_online"
+              type="number"
+              unit="時間前まで"
+              defaultValue={String(s.cutoffHours.online)}
+              help="移動の支度がいらないぶん、訪問より短くできます"
+            />
+            <Field
+              label="1日に受ける訪問の件数"
+              name="max_visit"
+              type="number"
+              unit="件まで"
+              defaultValue={String(s.maxPerDay.visit)}
+              help="これに達した日は、訪問の空き時間が出なくなります"
+            />
+            <Field
+              label="1日に受けるオンラインの件数"
+              name="max_online"
+              type="number"
+              unit="件まで"
+              defaultValue={String(s.maxPerDay.online)}
+              help="訪問とは別に数えます"
+            />
+            <Field
+              label="何日先まで予約できる？"
+              name="bookingWindowDays"
+              type="number"
+              unit="日先まで"
+              defaultValue={String(s.bookingWindowDays)}
+              help="長くしすぎると、先の予定が埋まって動かしにくくなります"
+            />
+          </div>
+        </Card>
+
+        {/* ------------ 対応エリア ------------ */}
+        <Card>
+          <SectionTitle hint="ここに書いていない地域のお客様には、オンラインをご案内します">
+            うかがえる地域
+          </SectionTitle>
+          <Field
+            label="訪問できる市区町村"
+            name="serviceAreas"
+            defaultValue={s.serviceAreas.join("、")}
+            help="読点（、）で区切って並べてください。オンラインは全国どこでもご利用いただけるので、ここは訪問だけの設定です"
+            example="例: 世田谷区、目黒区、渋谷区"
+          />
+        </Card>
+
+        {/* ------------ 税金まわり ------------ */}
+        <Card className="border-slate-200 bg-brand-50/30">
+          <SectionTitle hint="迷ったら、そのままで大丈夫です">
+            税金まわり（税理士さんと決める項目）
+          </SectionTitle>
+          <p className="mb-4 text-xs leading-relaxed text-slate-600">
+            ここは金額の計算に関わるところです。
+            <b>どれを選ぶかは税務の判断になるため、顧問の税理士さんにご確認ください。</b>
+            設定した内容は、領収書の消費税の出し方と、売上のまとめ方に反映されます。
+          </p>
+
+          <div className="grid gap-5 sm:grid-cols-2">
             <Field
               label="決算月"
               name="fiscalYearEndMonth"
               type="number"
+              unit="月"
               defaultValue={String(s.fiscalYearEndMonth)}
-              hint="法人のため任意の月を指定できます"
+              help="1年の区切りです。この月の末日で締めて集計します"
             />
             <Select
-              label="消費税の課税方式"
+              label="消費税の納め方"
               name="taxMethod"
               defaultValue={s.taxMethod}
-              hint="どちらが有利かは税理士にご確認ください"
+              help="どちらが有利かは売上と経費の状況で変わります"
               options={[
-                { value: "kani", label: "簡易課税（第五種・サービス業）" },
-                { value: "honsoku", label: "本則課税" },
+                { value: "kani", label: "簡易課税（売上から決まった割合で計算する）" },
+                { value: "honsoku", label: "本則課税（実際に払った消費税で計算する）" },
               ]}
             />
             <Select
-              label="消費税の端数処理"
+              label="1円未満が出たときの扱い"
               name="roundingMode"
               defaultValue={s.roundingMode}
-              hint="税率ごとに1回だけ適用します"
+              help="消費税の計算で端数が出たときの決まりです。一般には切捨てが使われます"
               options={[
-                { value: "floor", label: "切捨て" },
-                { value: "ceil", label: "切上げ" },
-                { value: "round", label: "四捨五入" },
+                { value: "floor", label: "切り捨てる" },
+                { value: "ceil", label: "切り上げる" },
+                { value: "round", label: "四捨五入する" },
               ]}
             />
           </div>
         </Card>
 
-        <Card>
-          <SectionTitle hint="オンラインの実施場所であり、訪問との往復の基準点になります">
-            拠点と移動時間
-          </SectionTitle>
-          <Field label="拠点（自宅・事務所）の住所" name="baseAddress" defaultValue={s.baseAddress} />
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field
-              label="🏠訪問 → 🏠訪問"
-              name="visit_visit"
-              type="number"
-              defaultValue={String(s.travelBuffer.visit_visit)}
-              hint="訪問先間の移動（分）"
-            />
-            <Field
-              label="🏠訪問 → 💻オンライン"
-              name="visit_online"
-              type="number"
-              defaultValue={String(s.travelBuffer.visit_online)}
-              hint="拠点への帰着（分）"
-            />
-            <Field
-              label="💻オンライン → 🏠訪問"
-              name="online_visit"
-              type="number"
-              defaultValue={String(s.travelBuffer.online_visit)}
-              hint="拠点からの出発（分）"
-            />
-            <Field
-              label="💻オンライン → 💻オンライン"
-              name="online_online"
-              type="number"
-              defaultValue={String(s.travelBuffer.online_online)}
-              hint="切替のみ（分）"
-            />
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field
-              label="準備バッファ（前）"
-              name="prepBeforeMinutes"
-              type="number"
-              defaultValue={String(s.prepBeforeMinutes)}
-            />
-            <Field
-              label="片付けバッファ（後）"
-              name="prepAfterMinutes"
-              type="number"
-              defaultValue={String(s.prepAfterMinutes)}
-            />
-          </div>
-        </Card>
-
-        <Card>
-          <SectionTitle hint="提供形態ごとに別々に設定できます">受付ルール</SectionTitle>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field
-              label="受付締切（訪問・時間前）"
-              name="cutoff_visit"
-              type="number"
-              defaultValue={String(s.cutoffHours.visit)}
-            />
-            <Field
-              label="受付締切（オンライン・時間前）"
-              name="cutoff_online"
-              type="number"
-              defaultValue={String(s.cutoffHours.online)}
-              hint="移動準備が不要な分、直前まで受けられます"
-            />
-            <Field
-              label="予約可能期間（日）"
-              name="bookingWindowDays"
-              type="number"
-              defaultValue={String(s.bookingWindowDays)}
-            />
-            <Field
-              label="1日の上限（訪問）"
-              name="max_visit"
-              type="number"
-              defaultValue={String(s.maxPerDay.visit)}
-            />
-            <Field
-              label="1日の上限（オンライン）"
-              name="max_online"
-              type="number"
-              defaultValue={String(s.maxPerDay.online)}
-            />
-          </div>
-          <div className="mt-4">
-            <Field
-              label="訪問の対応エリア（読点・スペース区切り）"
-              name="serviceAreas"
-              defaultValue={s.serviceAreas.join("、")}
-              hint="オンラインメニューには適用されません（全国対応）"
-            />
-          </div>
-        </Card>
-
-        <div className="flex justify-end">
-          <button className="rounded-pill bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
-            設定を保存する
+        <div className="sticky bottom-4 flex justify-end">
+          <button className="inline-flex items-center gap-2 rounded-pill bg-brand-600 px-7 py-3 text-sm font-bold text-white shadow-lift transition hover:bg-brand-700">
+            <Icon name="check" className="h-4 w-4" />
+            この内容で保存する
           </button>
         </div>
       </form>
 
+      {/* ------------ キャンセルの決まり ------------ */}
       <Card>
-        <SectionTitle>いまのキャンセルポリシー（仮置き）</SectionTitle>
-        <ul className="space-y-1 text-sm text-slate-700">
+        <SectionTitle hint="お客様の画面にもこのとおり表示されます">いまのキャンセルの決まり</SectionTitle>
+        <ul className="divide-y divide-slate-100">
           {s.cancelPolicy.map((p) => (
-            <li key={p.hoursBefore} className="flex justify-between">
-              <span>{p.hoursBefore === 0 ? "24時間未満" : `${p.hoursBefore}時間以上前`}</span>
-              <span className="tabular-nums">
-                キャンセル料 {p.feeRate}%
-                {p.selfServiceAllowed ? "" : "・お客様側の操作は不可"}
+            <li key={p.hoursBefore} className="flex items-center justify-between gap-3 py-2.5">
+              <span className="text-sm text-slate-700">
+                {p.hoursBefore === 0 ? "当日〜24時間前" : `${p.hoursBefore}時間より前`}
+              </span>
+              <span className="flex items-center gap-3 text-sm">
+                <span className="font-bold tabular-nums">
+                  {p.feeRate === 0 ? "無料" : `料金の${p.feeRate}%`}
+                </span>
+                {!p.selfServiceAllowed ? (
+                  <span className="rounded-pill bg-slate-100 px-2.5 py-1 text-2xs text-slate-600">
+                    お客様ご自身では取り消せません
+                  </span>
+                ) : null}
               </span>
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-xs text-slate-500">
-          デモでは編集画面を用意していません。実際のポリシーが決まり次第、ここも編集できるようにします。
+        <p className="mt-3 text-xs leading-relaxed text-slate-500">
+          この決まりは、実際の運用に合わせてこちらで設定します。
+          「何時間前まで無料にしたいか」をお知らせいただければ、その形に変更します。
         </p>
       </Card>
     </div>
   );
 }
 
+/* ---------------- 部品 ---------------- */
+
 function Field({
   label,
   name,
   defaultValue,
   type = "text",
-  hint,
+  unit,
+  help,
+  example,
+  className = "",
 }: {
   label: string;
   name: string;
   defaultValue: string;
   type?: string;
-  hint?: string;
+  unit?: string;
+  help?: string;
+  example?: string;
+  className?: string;
 }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-600">{label}</span>
-      <input
-        name={name}
-        type={type}
-        defaultValue={defaultValue}
-        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-      />
-      {hint ? <span className="mt-1 block text-2xs text-slate-500">{hint}</span> : null}
+    <label className={`block ${className}`}>
+      <span className="block text-sm font-bold text-ink">{label}</span>
+      {help ? (
+        <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{help}</span>
+      ) : null}
+      <span className="mt-2 flex items-center gap-2">
+        <input
+          name={name}
+          type={type}
+          defaultValue={defaultValue}
+          className={`rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm ${
+            type === "number" ? "w-28 tabular-nums" : "w-full"
+          }`}
+        />
+        {unit ? <span className="shrink-0 text-sm text-slate-500">{unit}</span> : null}
+      </span>
+      {example ? (
+        <span className="mt-1.5 block text-2xs text-slate-400">{example}</span>
+      ) : null}
+    </label>
+  );
+}
+
+function BufferField({
+  from,
+  to,
+  note,
+  name,
+  value,
+}: {
+  from: string;
+  to: string;
+  note: string;
+  name: string;
+  value: number;
+}) {
+  return (
+    <label className="block rounded-xl border border-slate-200 bg-brand-50/40 p-4">
+      <span className="flex items-center gap-2 text-sm font-bold text-ink">
+        <Icon name={from === "訪問" ? "visit" : "online"} className="h-4 w-4 text-slate-400" />
+        {from}
+        <Icon name="arrowRight" className="h-3.5 w-3.5 text-slate-400" />
+        <Icon name={to === "訪問" ? "visit" : "online"} className="h-4 w-4 text-slate-400" />
+        {to}
+      </span>
+      <span className="mt-1 block text-xs text-slate-500">{note}</span>
+      <span className="mt-2 flex items-center gap-2">
+        <input
+          name={name}
+          type="number"
+          defaultValue={String(value)}
+          className="w-24 rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm tabular-nums"
+        />
+        <span className="text-sm text-slate-500">分</span>
+      </span>
     </label>
   );
 }
@@ -220,21 +355,24 @@ function Select({
   name,
   defaultValue,
   options,
-  hint,
+  help,
 }: {
   label: string;
   name: string;
   defaultValue: string;
   options: { value: string; label: string }[];
-  hint?: string;
+  help?: string;
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-600">{label}</span>
+      <span className="block text-sm font-bold text-ink">{label}</span>
+      {help ? (
+        <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{help}</span>
+      ) : null}
       <select
         name={name}
         defaultValue={defaultValue}
-        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
+        className="mt-2 w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -242,7 +380,6 @@ function Select({
           </option>
         ))}
       </select>
-      {hint ? <span className="mt-1 block text-2xs text-slate-500">{hint}</span> : null}
     </label>
   );
 }

@@ -88,7 +88,7 @@ export default function InvoiceIssueForm({
               {pending ? "発行中…" : "発行してLINEに送る"}
             </button>
             <span className="text-xs text-slate-500">
-              複数選ぶと1通にまとまります（税率ごとに1回だけ端数処理）
+              複数選ぶと1通にまとまります（税率ごとに1回だけ1円未満の扱い）
             </span>
           </div>
         </form>

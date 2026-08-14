@@ -62,7 +62,7 @@ export default async function InvoiceView({ params }: { params: Promise<{ id: st
         </ol>
         <p className="mt-2">
           「PDFをダウンロード」を押すと、この見た目のままA4のPDFが生成されます（ヘッドレスChromiumで印刷）。
-          生成したPDFは証憑として保存され、取引年月日・金額・取引先で検索できます。
+          生成したPDFはレシート・書類として保存され、取引年月日・金額・取引先で検索できます。
         </p>
       </div>
     </div>

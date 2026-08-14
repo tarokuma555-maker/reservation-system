@@ -43,7 +43,7 @@ export default async function ExpensesPage() {
         }`}
       >
         <p className="font-bold">
-          {live ? "ライブモード: Cloud Vision APIで読み取ります" : "モックモード: サンプルのレシート文面を使います"}
+          {live ? "本番接続: Cloud Vision APIで読み取ります" : "お試しモード: サンプルのレシート文面を使います"}
         </p>
         {!live ? (
           <p className="mt-1 text-xs leading-relaxed">
@@ -96,7 +96,7 @@ export default async function ExpensesPage() {
                       </div>
                     </div>
                     {e.journalEntryId ? (
-                      <p className="mt-1 text-2xs text-brand-700">仕訳を作成済み</p>
+                      <p className="mt-1 text-2xs text-brand-700">帳簿に記録済み</p>
                     ) : null}
                   </div>
                 );

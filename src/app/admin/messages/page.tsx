@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { lineMode } from "@/lib/line";
 import { Card, Empty, ProvisionalNote, SectionTitle } from "@/components/ui";
 import { FlexPreview } from "@/components/FlexPreview";
+import { Icon, type IconName } from "@/components/Icon";
 import {
   publishRichMenuAction,
   runOnlineReminderBatchAction,
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   sent: { label: "送信済", cls: "bg-good-600 text-white" },
-  mocked: { label: "モック送信", cls: "bg-slate-200 text-slate-700" },
+  mocked: { label: "送信したことにする", cls: "bg-slate-200 text-slate-700" },
   failed: { label: "送信失敗", cls: "bg-bad-100 text-bad-700" },
   queued: { label: "送信待ち", cls: "bg-warn-100 text-warn-700" },
 };
@@ -37,7 +38,7 @@ export default async function MessagesPage() {
       <header>
         <h1 className="text-2xl font-extrabold tracking-tighter text-ink">LINE連携</h1>
         <p className="text-sm text-slate-500">
-          送信したメッセージ、受信したWebhook、リッチメニューの管理
+          送信したメッセージ、受信したLINEからのお知らせ、リッチメニューの管理
         </p>
       </header>
 
@@ -49,13 +50,13 @@ export default async function MessagesPage() {
         }`}
       >
         <p className="font-bold">
-          {live ? "ライブモード: 実際にLINEへ送信しています" : "モックモード: LINEへは送信していません"}
+          {live ? "本番接続: 実際にLINEへ送信しています" : "お試しモード: LINEへは送信していません"}
         </p>
         {!live ? (
           <p className="mt-1 text-xs leading-relaxed">
             <code>LINE_CHANNEL_ACCESS_TOKEN</code> と <code>LINE_CHANNEL_SECRET</code>
             を設定すると、コードを変えずに実接続に切り替わります。
-            モックモードでも<b>実際に送るJSONは同じもの</b>を組み立てて保存しているため、
+            お試しモードでも<b>実際に送る内容は同じもの</b>を組み立てて保存しているため、
             下の内容がそのままお客様に届きます。
           </p>
         ) : null}
@@ -104,7 +105,7 @@ export default async function MessagesPage() {
                   ) : null}
                   <details className="mt-2">
                     <summary className="cursor-pointer text-2xs text-slate-500">
-                      実際に送るJSONを見る
+                      送信内容の詳細（開発の確認用）
                     </summary>
                     <pre className="mt-1 max-h-64 overflow-auto rounded-xl bg-slate-900 p-3.5 text-[10px] leading-relaxed text-brand-100">
                       {m.payload}
@@ -118,8 +119,8 @@ export default async function MessagesPage() {
       </section>
 
       <section>
-        <SectionTitle hint="署名検証・冪等処理を通してから処理されます">
-          受信したWebhookイベント
+        <SectionTitle hint="なりすましを防ぐ確認をしてから処理します。同じお知らせが二重に届いても一度しか処理しません">
+          LINEから届いたお知らせ
         </SectionTitle>
         <Card className="space-y-3">
           <form action={simulateWebhookAction} className="flex flex-wrap items-end gap-2">
@@ -158,7 +159,7 @@ export default async function MessagesPage() {
               />
             </label>
             <button className="rounded-pill border border-slate-200 bg-surface px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700">
-              疑似イベントを送る
+              テストで送ってみる
             </button>
           </form>
 
@@ -188,7 +189,7 @@ export default async function MessagesPage() {
         </SectionTitle>
         <div className="grid gap-4 lg:grid-cols-2">
           {richMenus.map((rm) => {
-            const areas = JSON.parse(rm.areas) as { label: string; icon: string; path: string }[];
+            const areas = JSON.parse(rm.areas) as { label: string; icon: IconName; path: string }[];
             return (
               <Card key={rm.id}>
                 <div className="flex items-start justify-between gap-2">
@@ -212,7 +213,7 @@ export default async function MessagesPage() {
                       key={a.path}
                       className="flex flex-col items-center gap-1 bg-brand-50 py-4 text-center"
                     >
-                      <span className="text-xl">{a.icon}</span>
+                      <Icon name={a.icon} className="h-5 w-5 text-brand-600" />
                       <span className="text-2xs text-slate-700">{a.label}</span>
                     </div>
                   ))}
@@ -238,7 +239,7 @@ export default async function MessagesPage() {
 
       <ProvisionalNote>
         本番接続に必要なもの: LINE Developers でのMessaging APIチャネル作成、チャネルアクセストークンと
-        チャネルシークレット、Webhook URL（<code>/api/line/webhook</code>）の登録、LIFFアプリの作成。
+        チャネルシークレット、LINEからのお知らせ URL（<code>/api/line/webhook</code>）の登録、LIFFアプリの作成。
         リッチメニューの画像（2500×1686）は別途ご用意ください。
       </ProvisionalNote>
     </div>

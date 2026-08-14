@@ -33,7 +33,7 @@ export default async function TalkPage() {
     <div className="min-h-[70vh] space-y-4 bg-brand-50 p-4">
       {lineMode() === "mock" ? (
         <p className="rounded-card border border-slate-200/80 bg-surface px-3.5 py-2.5 text-2xs leading-relaxed text-slate-600 shadow-card">
-          モックモードで動いています。実際のLINEには送信していませんが、
+          お試しモードで動いています。実際のLINEには送信していませんが、
           <b>ここに出ている内容がそのままお客様に届きます</b>（同じJSONをMessaging APIへ送ります）。
         </p>
       ) : null}

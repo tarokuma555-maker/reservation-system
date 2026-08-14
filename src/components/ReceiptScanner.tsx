@@ -27,7 +27,7 @@ export default function ReceiptScanner({
 
         {mode === "mock" ? (
           <label className="block text-xs text-slate-500">
-            サンプルのレシートを選ぶ（モックモード）
+            サンプルのレシートを選ぶ（お試しモード）
             <select
               name="sampleKey"
               value={sampleKey}
@@ -167,7 +167,7 @@ export default function ReceiptScanner({
           </label>
 
           <button className="w-full rounded-pill bg-brand-600 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700">
-            経費として登録し、仕訳を起こす
+            経費として登録し、帳簿に記録する
           </button>
         </form>
       ) : null}

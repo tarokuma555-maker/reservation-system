@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon, type IconName } from "./Icon";
 
 /* ---------------- バッジ類 ---------------- */
 
@@ -12,6 +13,7 @@ export function DeliveryBadge({ type, className = "" }: { type: string; classNam
           : "bg-ocean-100 text-ocean-700 ring-1 ring-inset ring-ocean-500/25"
       } ${className}`}
     >
+      <Icon name={visit ? "visit" : "online"} className="h-3.5 w-3.5" />
       {visit ? "訪問" : "オンライン"}
     </span>
   );
@@ -66,6 +68,23 @@ export function Card({
     >
       {children}
     </div>
+  );
+}
+
+export function IconLabel({
+  name,
+  children,
+  className = "",
+}: {
+  name: IconName;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className}`}>
+      <Icon name={name} className="h-4 w-4" />
+      {children}
+    </span>
   );
 }
 
@@ -235,7 +254,7 @@ export function Field({
 export function ProvisionalNote({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex gap-3 rounded-card border border-warn-100 bg-warn-50 px-4 py-3">
-      <span className="mt-0.5 shrink-0 text-sm">📌</span>
+      <Icon name="info" className="mt-0.5 h-4 w-4 text-warn-600" />
       <p className="text-xs leading-relaxed text-warn-700">{children}</p>
     </div>
   );

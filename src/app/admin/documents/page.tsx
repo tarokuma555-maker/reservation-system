@@ -12,7 +12,7 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 /**
- * 証憑ボックス。
+ * レシート・書類の保管。
  * 電子帳簿保存法の検索要件（取引年月日・取引金額・取引先）で絞り込める。
  */
 export default async function DocumentsPage({
@@ -48,7 +48,7 @@ export default async function DocumentsPage({
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">証憑ボックス</h1>
+        <h1 className="text-2xl font-extrabold tracking-tighter text-ink">レシート・書類の保管</h1>
         <p className="text-sm text-slate-500">
           電子帳簿保存法の要件に沿って保存しています（訂正削除の履歴を残し、保存期限内は削除できません）
         </p>
@@ -91,9 +91,9 @@ export default async function DocumentsPage({
       </section>
 
       <section>
-        <SectionTitle hint={`${documents.length}件`}>保存されている証憑</SectionTitle>
+        <SectionTitle hint={`${documents.length}件`}>保存されている書類</SectionTitle>
         {documents.length === 0 ? (
-          <Empty>該当する証憑はありません</Empty>
+          <Empty>見つかりませんでした</Empty>
         ) : (
           <div className="space-y-3">
             {documents.map((d) => (

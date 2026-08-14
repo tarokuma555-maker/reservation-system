@@ -138,7 +138,7 @@ export default function InvoiceDocument(props: InvoiceDocumentProps) {
 
       <p className="mt-8 text-[11px] leading-relaxed text-slate-500">
         この書類は適格請求書等保存方式（インボイス制度）の記載事項を満たしています。
-        消費税額は税率ごとに1回のみ端数処理（{props.roundingLabel}）しています。
+        消費税額は税率ごとに1回のみ1円未満の扱い（{props.roundingLabel}）しています。
       </p>
     </div>
   );

@@ -127,12 +127,12 @@ export default async function RecurringDetail({ params }: { params: Promise<{ id
                         >
                           {alternativeMenus.map((m) => (
                             <option key={m.id} value={m.id}>
-                              {m.deliveryType === "visit" ? "🏠" : "💻"} {m.name}
+                              {m.deliveryType === "visit" ? "訪問" : "オンライン"}／{m.name}
                             </option>
                           ))}
                         </select>
                         <button className="rounded-pill border border-slate-200 bg-surface px-3 py-1.5 text-2xs font-bold text-slate-600 transition hover:border-brand-300 hover:text-brand-700">
-                          形態を変更
+                          訪問⇄オンライン
                         </button>
                       </form>
                       <Link

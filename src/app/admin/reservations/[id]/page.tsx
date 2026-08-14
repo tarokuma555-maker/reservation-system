@@ -33,7 +33,7 @@ export default async function AdminReservationDetail({
   });
   if (!reservation) notFound();
 
-  // 提供形態を振り替えるための候補メニュー（いまと逆の形態）
+  // 訪問とオンラインを切り替えるための候補メニュー（いまと逆の形態）
   const alternativeMenus = await prisma.menu.findMany({
     where: {
       isPublished: true,
@@ -125,7 +125,7 @@ export default async function AdminReservationDetail({
             <>
               <Card>
                 <SectionTitle hint="料金と所要時間を再計算し、会議URLの発行・破棄も自動で行います">
-                  提供形態を振り替える
+                  訪問とオンラインを切り替える
                 </SectionTitle>
                 <form action={switchDeliveryType} className="flex flex-wrap items-end gap-2">
                   <input type="hidden" name="reservationId" value={reservation.id} />
@@ -135,7 +135,7 @@ export default async function AdminReservationDetail({
                   >
                     {alternativeMenus.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.deliveryType === "visit" ? "🏠" : "💻"} {m.name}（{formatYen(m.price)}）
+                        {m.deliveryType === "visit" ? "訪問" : "オンライン"}／{m.name}（{formatYen(m.price)}）
                       </option>
                     ))}
                   </select>

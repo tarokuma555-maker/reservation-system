@@ -82,9 +82,9 @@ export default async function AccountingPage() {
       </div>
 
       <section>
-        <SectionTitle hint="月次で数字を見られることが、経営上いちばん効きます">残高試算表</SectionTitle>
+        <SectionTitle hint="月次で数字を見られることが、経営上いちばん効きます">科目ごとの残高（科目ごとの残高）</SectionTitle>
         {tb.rows.length === 0 ? (
-          <Empty>まだ仕訳がありません。予約を実施済みにするか、経費を登録してください。</Empty>
+          <Empty>まだ帳簿の記録がありません。予約を実施済みにするか、経費を登録してください。</Empty>
         ) : (
           <Card className="scroll-x p-0">
             <table className="w-full min-w-[640px] text-sm">
@@ -189,9 +189,9 @@ export default async function AccountingPage() {
       </section>
 
       <section>
-        <SectionTitle hint="すべての仕訳を日付順に">仕訳帳</SectionTitle>
+        <SectionTitle hint="お金の動きを日付順に並べています">記録の一覧（仕訳帳）</SectionTitle>
         {entries.length === 0 ? (
-          <Empty>まだ仕訳がありません</Empty>
+          <Empty>まだ帳簿の記録がありません</Empty>
         ) : (
           <div className="space-y-3">
             {entries.map((e) => (

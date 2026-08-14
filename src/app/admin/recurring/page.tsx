@@ -70,7 +70,7 @@ export default async function AdminRecurringList() {
         <SectionTitle>この画面でできること</SectionTitle>
         <Card className="text-sm leading-relaxed text-slate-600">
           <ul className="list-disc space-y-1 pl-5">
-            <li>各回ごとの「今回だけスキップ」「今回だけ日時変更」「今回だけ提供形態を変更」</li>
+            <li>各回ごとの「今回だけスキップ」「今回だけ日時変更」「今回だけご利用方法を変更」</li>
             <li>ルール自体の条件変更（適用開始日を指定して、それ以降の未実施分だけ作り直す）</li>
             <li>一時休止と再開、終了</li>
             <li>

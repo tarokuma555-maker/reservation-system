@@ -59,8 +59,8 @@ export default async function CalendarSyncPage() {
       >
         <p className="font-bold">
           {live
-            ? `ライブモード: ${targetCalendarId()} に書き出しています`
-            : "モックモード: Google側の状態をこのシステム内で再現しています"}
+            ? `本番接続: ${targetCalendarId()} に書き出しています`
+            : "お試しモード: Google側の状態をこのシステム内で再現しています"}
         </p>
         {!live ? (
           <p className="mt-1 text-xs leading-relaxed">
