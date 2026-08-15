@@ -72,6 +72,8 @@ model Customer {
   id             String        @id @default(cuid())
   lineUserId     String        @unique
   name           String
+  /// LINEのプロフィール画像。友だち追加時にLINEから取得する
+  pictureUrl     String?
   nameKana       String        @default("")
   phone          String        @default("")
   email          String?

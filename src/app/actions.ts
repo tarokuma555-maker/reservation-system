@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { DEMO_CUSTOMER_COOKIE, getOwner } from "@/lib/session";
+import { DEMO_CUSTOMER_COOKIE, getCurrentCustomer, getOwner, isLiffLive } from "@/lib/session";
 import { requireStaff } from "@/lib/auth";
 import { LIFF_IDENTITY_READY } from "@/lib/readiness";
 import { getSettings, resolveCancelPolicy, saveSettings } from "@/lib/settings";
@@ -46,9 +46,42 @@ function refresh() {
   revalidatePath("/", "layout");
 }
 
+/**
+ * お客様側から呼ばれたとき、「本当にその方か」を確かめる。
+ *
+ * 画面から送られてくる顧客IDや予約IDは、手元で書き換えられる。
+ * そのまま信じると、他人の予約を覗いたり取り消したりできてしまう。
+ * 本番（LIFFの設定あり）では、確認できたご本人のものだけを通す。
+ */
+async function currentCustomerOrThrow() {
+  const customer = await getCurrentCustomer();
+  if (!customer) throw new Error("どなたか確認できませんでした。LINEから開き直してください。");
+  return customer;
+}
+
+/** その予約がご本人のものか確かめる。オーナーの操作は対象外。 */
+async function assertCustomerOwnsReservation(reservationId: string, by: string) {
+  if (by === "owner") {
+    await requireStaff();
+    return;
+  }
+  if (!(await isLiffLive())) return; // つなぎこみ前の確認用
+
+  const customer = await currentCustomerOrThrow();
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    select: { customerId: true },
+  });
+  if (!reservation || reservation.customerId !== customer.id) {
+    throw new Error("このご予約は操作できません。");
+  }
+}
+
 /* ---------------- デモ用: 操作する顧客の切替 ---------------- */
 
 export async function switchCustomer(formData: FormData) {
+  // 本番では「誰として見るか」を選ばせない。LINEの確認結果だけを使う。
+  if (await isLiffLive()) throw new Error("この操作はできません");
   const id = String(formData.get("customerId") ?? "");
   const store = await cookies();
   store.set(DEMO_CUSTOMER_COOKIE, id, { path: "/", maxAge: 60 * 60 * 24 * 30 });
@@ -58,7 +91,11 @@ export async function switchCustomer(formData: FormData) {
 /* ---------------- 予約 ---------------- */
 
 export async function createReservation(formData: FormData) {
-  const customerId = String(formData.get("customerId"));
+  // 本番では、フォームから送られてきた顧客IDは使わない。
+  // 確認できたご本人としてのみ予約を作る。
+  const customerId = (await isLiffLive())
+    ? (await currentCustomerOrThrow()).id
+    : String(formData.get("customerId"));
   const menuId = String(formData.get("menuId"));
   const dateStr = String(formData.get("date"));
   const time = String(formData.get("time"));
@@ -141,6 +178,8 @@ export async function cancelReservation(formData: FormData) {
   const by = String(formData.get("by") ?? "customer");
   const reason = String(formData.get("reason") ?? "");
 
+  await assertCustomerOwnsReservation(id, by);
+
   const [settings, reservation] = await Promise.all([
     getSettings(),
     prisma.reservation.findUniqueOrThrow({ where: { id }, include: { customer: true } }),
@@ -183,6 +222,8 @@ export async function rescheduleReservation(formData: FormData) {
   const dateStr = String(formData.get("date"));
   const time = String(formData.get("time"));
   const by = String(formData.get("by") ?? "customer");
+
+  await assertCustomerOwnsReservation(id, by);
 
   const reservation = await prisma.reservation.findUniqueOrThrow({
     where: { id },
@@ -357,6 +398,7 @@ export async function createRecurringRule(formData: FormData) {
 
 export async function skipOccurrence(formData: FormData) {
   const id = String(formData.get("reservationId"));
+  await assertCustomerOwnsReservation(id, String(formData.get("by") ?? "customer"));
   await notifySkipped(id);
   await prisma.reservation.update({
     where: { id },

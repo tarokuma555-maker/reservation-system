@@ -1,20 +1,29 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { getCurrentCustomer } from "@/lib/session";
+import { getCurrentCustomer, isLiffLive } from "@/lib/session";
+import { getLineCredentials } from "@/lib/line";
+import LiffBoot from "@/components/LiffBoot";
 import { switchCustomer } from "@/app/actions";
 import LineRichMenu from "@/components/LineRichMenu";
 
 export const dynamic = "force-dynamic";
 
 export default async function LiffLayout({ children }: { children: React.ReactNode }) {
-  const [customers, current] = await Promise.all([
-    prisma.customer.findMany({ orderBy: { createdAt: "asc" } }),
+  const live = await isLiffLive();
+  const [customers, current, credentials] = await Promise.all([
+    // 本番では他のお客様の一覧を読み込まない（切替そのものが無いため）
+    live ? Promise.resolve([]) : prisma.customer.findMany({ orderBy: { createdAt: "asc" } }),
     getCurrentCustomer(),
+    getLineCredentials(),
   ]);
+
+  // 本番で「どなたか分からない」ときは、中身を一切出さずに確認から始める
+  const needsIdentify = live && !current;
 
   return (
     <div className="min-h-screen bg-ground-warm">
-      {/* デモの操作バー。本番のLINEには存在しない */}
+      {/* つなぎこみ前の確認用の操作バー。本番のLINEには出ない */}
+      {live ? null : (
       <div className="border-b border-slate-200/70 bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-[420px] flex-wrap items-center gap-2 px-4 py-2.5">
           <Link
@@ -46,6 +55,7 @@ export default async function LiffLayout({ children }: { children: React.ReactNo
           </form>
         </div>
       </div>
+      )}
 
       {/* 端末に見立てた枠 */}
       <div className="px-4 py-6">
@@ -65,9 +75,11 @@ export default async function LiffLayout({ children }: { children: React.ReactNo
             </div>
           </header>
 
-          <div className="flex-1">{children}</div>
+          <div className="flex-1">
+            {needsIdentify ? <LiffBoot liffId={credentials!.liffId!} /> : children}
+          </div>
 
-          <LineRichMenu />
+          {needsIdentify ? null : <LineRichMenu />}
         </div>
       </div>
     </div>
