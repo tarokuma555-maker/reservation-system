@@ -8,6 +8,7 @@ import { addDays, addMinutes, jst, now, todayStr } from "@/lib/time";
 import { markConnectionResult } from "@/lib/connections";
 import { getLineCredentials, testLineCredentials } from "@/lib/line";
 import { getGoogleCredentials, testGoogleCredentials } from "@/lib/google-calendar";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -69,6 +70,19 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ job: string
  */
 async function runDaily() {
   const results: Record<string, unknown> = {};
+
+  // おためし用の置き場所では、毎日データを作り直す。
+  // そうしないと、見せている「明日のご予約」が日ごとに過去へずれていく。
+  if (isDemoMode()) {
+    try {
+      const { seedDemoData } = await import("@/lib/demo-seed");
+      await seedDemoData();
+      results.demoReseed = { ok: true };
+    } catch (e) {
+      results.demoReseed = { error: e instanceof Error ? e.message : String(e) };
+    }
+    return { job: "daily", demo: true, results };
+  }
 
   for (const [name, run] of [
     ["reminders", sendReminders],

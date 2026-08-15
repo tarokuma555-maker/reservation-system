@@ -3,6 +3,7 @@ import { updateSettingsAction } from "@/app/actions";
 import { Card, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { CONFIRM_PHRASE, demoDataCounts, isDemoData } from "@/lib/reset";
+import { isDemoMode } from "@/lib/demo-mode";
 import StartProductionCard from "@/components/StartProductionCard";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +17,15 @@ export const dynamic = "force-dynamic";
  * 税務の判断が必要なものは下の方にまとめ、税理士さんと決める項目だと明記する。
  */
 export default async function SettingsPage() {
-  const [s, stillDemo, counts] = await Promise.all([
+  const [s, hasDemoData, counts] = await Promise.all([
     getSettings(),
     isDemoData(),
     demoDataCounts(),
   ]);
+
+  // おためし用の置き場所では、消す操作を出さない。
+  // 消してしまうと、見せるものが無くなってしまうため。
+  const stillDemo = hasDemoData && !isDemoMode();
 
   return (
     <div className="space-y-8">

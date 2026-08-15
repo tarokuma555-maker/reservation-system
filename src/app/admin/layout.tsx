@@ -3,6 +3,7 @@ import { getSettings } from "@/lib/settings";
 import { lineMode } from "@/lib/line";
 import { googleMode } from "@/lib/google-calendar";
 import { Icon, type IconName } from "@/components/Icon";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const settings = await getSettings();
   const line = await lineMode();
   const google = await googleMode();
+  const demo = isDemoMode();
 
   return (
     <div className="min-h-screen lg:flex">
@@ -91,6 +93,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       <main className="min-w-0 flex-1">
+        {demo ? (
+          <div className="no-print flex items-center justify-center gap-2 bg-brand-600 px-4 py-2 text-center text-2xs font-bold text-white">
+            <Icon name="info" className="h-3.5 w-3.5" />
+            これは<b className="mx-0.5">おためし用</b>の画面です。ここでの操作は本番には影響しません。
+          </div>
+        ) : null}
         <div className="mx-auto max-w-6xl px-5 py-6 lg:px-10 lg:py-10">{children}</div>
       </main>
     </div>

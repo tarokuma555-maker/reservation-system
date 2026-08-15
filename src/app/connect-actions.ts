@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import crypto from "node:crypto";
 import { requireStaff } from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
 import {
   disconnect,
   saveConnection,
@@ -37,6 +38,15 @@ export async function connectLineAction(
   formData: FormData
 ): Promise<ConnectState> {
   const staff = await requireStaff();
+
+  // おためし用の置き場所を実際のLINEにつなぐと、架空のご予約から
+  // 本物のお客様へおしらせが飛んでしまう。ここで止める。
+  if (isDemoMode()) {
+    return {
+      error:
+        "こちらはおためし用の画面なので、実際のLINEにはつなげません。本番の画面からお願いします。",
+    };
+  }
 
   const accessToken = String(formData.get("accessToken") ?? "").trim();
   const channelSecret = String(formData.get("channelSecret") ?? "").trim();
