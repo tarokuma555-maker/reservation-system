@@ -31,14 +31,28 @@ test("同じ値でも、暗号化のたびに違う文字列になる", () => {
   assert.equal(decrypt(a), decrypt(b));
 });
 
-test("暗号文を1文字でも書き換えたら、復号を拒否する", () => {
+test("暗号文を1バイトでも書き換えたら、復号を拒否する", () => {
+  const sealed = encrypt("important-secret-that-is-long-enough");
+  const parts = sealed.split(".");
+
+  // 末尾の文字ではなく、中ほどのバイトを反転させる。
+  // base64の末尾1文字は「使われないビット」を含むことがあり、
+  // 別の文字にしても復号結果が変わらない場合があるため。
+  const body = Buffer.from(parts[3], "base64url");
+  body[Math.floor(body.length / 2)] ^= 0xff;
+  parts[3] = body.toString("base64url");
+
+  assert.throws(() => decrypt(parts.join(".")), /.*/);
+});
+
+test("認証タグを書き換えても、復号を拒否する", () => {
   const sealed = encrypt("important-secret");
   const parts = sealed.split(".");
-  // 本体の末尾を別の文字にすり替える
-  const last = parts[3];
-  parts[3] = last.slice(0, -1) + (last.endsWith("A") ? "B" : "A");
+  const tag = Buffer.from(parts[2], "base64url");
+  tag[0] ^= 0xff;
+  parts[2] = tag.toString("base64url");
 
-  assert.throws(() => decrypt(parts.join(".")));
+  assert.throws(() => decrypt(parts.join(".")), /.*/);
 });
 
 test("別の鍵では読めない", () => {
