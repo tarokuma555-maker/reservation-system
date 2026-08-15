@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import crypto from "node:crypto";
 import { requireStaff } from "@/lib/auth";
-import { disconnect, saveConnection, updateConnectionConfig } from "@/lib/connections";
+import {
+  disconnect,
+  saveConnection,
+  updateConnectionConfig,
+  updateCredentials,
+} from "@/lib/connections";
 import { getLineCredentials, testLineCredentials, type LineCredentials } from "@/lib/line";
 import { googleRedirectUri, GOOGLE_OAUTH_STATE_COOKIE } from "@/lib/google-oauth";
 import {
@@ -35,7 +40,6 @@ export async function connectLineAction(
 
   const accessToken = String(formData.get("accessToken") ?? "").trim();
   const channelSecret = String(formData.get("channelSecret") ?? "").trim();
-  const liffId = String(formData.get("liffId") ?? "").trim();
 
   if (!accessToken || !channelSecret) {
     return { error: "2つとも貼り付けてください。どちらか片方だけでは動きません。" };
@@ -46,9 +50,13 @@ export async function connectLineAction(
   const result = await testLineCredentials(accessToken);
   if (!result.ok) return { error: result.error };
 
+  // LIFF IDは手順4で別に入れてもらう。合いことばを貼り直しただけで
+  // 予約画面へのつながりが消えると、原因の分からない壊れ方になるため引き継ぐ。
+  const previous = await getLineCredentials();
+
   await saveConnection({
     provider: "line",
-    credentials: { accessToken, channelSecret, liffId: liffId || undefined },
+    credentials: { accessToken, channelSecret, liffId: previous?.liffId || undefined },
     label: result.botName,
     actorName: staff.name,
   });
@@ -58,6 +66,36 @@ export async function connectLineAction(
     ok: `「${result.botName}」につながりました。`,
     detail: result.basicId ? `LINE ID: ${result.basicId}` : undefined,
   };
+}
+
+/**
+ * LIFF IDだけを入れ直す。
+ * 合いことばを貼り直さずに済むようにするため、専用の口を用意している。
+ */
+export async function saveLiffIdAction(
+  _prev: ConnectState,
+  formData: FormData
+): Promise<ConnectState> {
+  await requireStaff();
+
+  const liffId = String(formData.get("liffId") ?? "").trim();
+  if (!liffId) return { error: "LIFF IDを貼り付けてください。" };
+
+  // 「数字 - 英数字」の形。ここでずれていると、あとで原因が分かりにくい壊れ方をする
+  if (!/^\d{8,}-[0-9a-zA-Z]+$/.test(liffId)) {
+    return {
+      error:
+        "LIFF IDの形が違うようです。「1234567890-abcdefgh」のような、数字とハイフンで始まる文字列を貼り付けてください。",
+    };
+  }
+
+  const updated = await updateCredentials<LineCredentials>("line", { liffId });
+  if (!updated) {
+    return { error: "先にLINEとつないでください（手順1）。" };
+  }
+
+  revalidatePath("/admin", "layout");
+  return { ok: "予約画面をLINEにつなぎました。" };
 }
 
 export async function disconnectLineAction(): Promise<void> {

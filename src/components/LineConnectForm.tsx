@@ -108,21 +108,13 @@ export default function LineConnectForm({
         </span>
       </label>
 
-      <label className="block">
-        <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">
-          LIFF ID
-          <span className="ml-1.5 font-normal text-slate-400">（あとで入れても大丈夫です）</span>
-        </span>
-        <input
-          name="liffId"
-          defaultValue={currentLiffId ?? ""}
-          placeholder="1234567890-abcdefgh"
-          className={inputCls}
-        />
-        <span className="mt-1 block text-2xs text-slate-500">
-          ご予約の画面をLINEの中で開くために使います。空のままでも、おしらせは届きます。
-        </span>
-      </label>
+      {currentLiffId ? (
+        <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-slate-500">
+          <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+          いま入っているLIFF ID（{currentLiffId}）はそのまま引き継ぎます。
+          変えたいときは手順4で入れ直してください。
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
         <button

@@ -7,6 +7,7 @@ import { Icon, type IconName } from "@/components/Icon";
 import { SetupProgress, SetupStep, Howto } from "@/components/SetupStep";
 import CopyField from "@/components/CopyField";
 import LineConnectForm from "@/components/LineConnectForm";
+import LiffIdForm from "@/components/LiffIdForm";
 import { disconnectLineAction, recheckLineAction } from "@/app/connect-actions";
 import { publishRichMenuAction } from "@/app/actions";
 
@@ -193,6 +194,48 @@ export default async function LineSetupPage() {
       {/* ---------------- 手順3 ---------------- */}
       <SetupStep
         n={3}
+        title="ご予約の画面を、LINEの中で開けるようにする"
+        summary="お客様がLINEを離れずに予約できるようにします。次の手順のメニューを出すのに必要です。"
+        done={hasLiff}
+      >
+        <div className="space-y-4">
+          <CopyField label="LIFFを作るときに使うURL" value={liffUrl} />
+          <Howto
+            steps={[
+              <>
+                LINE Developers で、お店の公式アカウントと<b>同じプロバイダー</b>の中に
+                <b>「LINEログイン」</b>のチャネルを1つ作ります
+                （予約画面は、この種類のチャネルにしか置けません）
+              </>,
+              <>
+                作ったチャネルの<b>「LIFF」</b>のタブを開き、「追加」を押します
+              </>,
+              <>
+                サイズは<b>「Full」</b>、上のURLを貼り、
+                「scope」は <b>profile</b> と <b>openid</b> にチェックを入れます
+              </>,
+              <>
+                できあがった<b>LIFF ID</b>を写して、下の欄に貼り付けます
+              </>,
+            ]}
+          />
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+            <LiffIdForm current={credentials?.liffId ?? null} />
+          </div>
+
+          {connected ? null : (
+            <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-slate-500">
+              <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+              先に手順1でLINEとつないでから、こちらを入れてください。
+            </p>
+          )}
+        </div>
+      </SetupStep>
+
+      {/* ---------------- 手順4 ---------------- */}
+      <SetupStep
+        n={4}
         title="LINEの下に出るメニューを出す"
         summary="お客様がトーク画面を開いたときに下へ並ぶボタンです。ここから予約していただきます。"
         done={menuPublished}
@@ -258,7 +301,7 @@ export default async function LineSetupPage() {
           <div className="mt-3 flex gap-3 rounded-card border border-warn-100 bg-warn-50 px-4 py-3.5">
             <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" />
             <div className="text-xs leading-relaxed text-warn-700">
-              <p className="font-bold">先に下の「手順4」をお願いします</p>
+              <p className="font-bold">先に上の「手順3」をお願いします</p>
               <p className="mt-1">
                 LIFF IDが無いと、メニューを押しても予約画面を開けません
                 （開いても、どなたが押したのか分からないためです）。
@@ -287,38 +330,6 @@ export default async function LineSetupPage() {
         ) : null}
       </SetupStep>
 
-      {/* ---------------- 手順4 ---------------- */}
-      <SetupStep
-        n={4}
-        title="ご予約の画面を、LINEの中で開けるようにする"
-        summary="これを入れると、お客様がLINEを離れずに予約できます。入れなくても、おしらせは届きます。"
-        done={hasLiff}
-        optional
-      >
-        <div className="space-y-4">
-          <CopyField label="LIFFを作るときに使うURL" value={liffUrl} />
-          <Howto
-            steps={[
-              <>
-                LINE Developers で<b>「LIFF」</b>のタブを開き、「追加」を押します
-              </>,
-              <>
-                サイズは<b>「Full」</b>、上のURLを貼り、
-                「scope」は <b>profile</b> と <b>openid</b> にチェックを入れます
-              </>,
-              <>
-                できあがった<b>LIFF ID</b>を写して、手順1の「LIFF ID」の欄に貼り付けます
-              </>,
-            ]}
-          />
-          {hasLiff ? (
-            <p className="inline-flex items-center gap-1.5 text-xs font-bold text-good-700">
-              <Icon name="check" className="h-4 w-4" strokeWidth={2.6} />
-              入っています（{credentials?.liffId}）
-            </p>
-          ) : null}
-        </div>
-      </SetupStep>
 
       {/* ---------------- 届くおしらせ ---------------- */}
       <section className="pt-2">

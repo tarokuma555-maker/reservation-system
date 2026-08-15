@@ -131,6 +131,33 @@ export async function saveConnection(params: {
   );
 }
 
+/**
+ * 合いことばの一部だけを差し替える。
+ *
+ * 全部を貼り直させると、長いトークンを取りに戻る手間がかかる。
+ * つながっている状態はそのまま保ち、中身だけを更新する。
+ */
+export async function updateCredentials<T extends object>(
+  provider: Provider,
+  patch: Partial<T>
+): Promise<boolean> {
+  const row = await prisma.connection.findUnique({ where: { provider } });
+  if (!row) return false;
+
+  let current: T;
+  try {
+    current = decryptJson<T>(row.credentials);
+  } catch {
+    return false;
+  }
+
+  await prisma.connection.update({
+    where: { provider },
+    data: { credentials: encryptJson({ ...current, ...patch }) },
+  });
+  return true;
+}
+
 /** 秘密でない付随設定（書き出し先カレンダーなど）だけを更新する */
 export async function updateConnectionConfig(
   provider: Provider,
