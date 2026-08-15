@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getCurrentCustomer } from "@/lib/session";
 import { getSettings } from "@/lib/settings";
-import { isServiceableArea } from "@/lib/availability";
+import { visitEligibility } from "@/lib/availability";
 import { DeliveryBadge } from "@/components/ui";
 import { Icon, type IconName } from "@/components/Icon";
 import { formatYen } from "@/lib/time";
@@ -30,7 +30,8 @@ export default async function MenusPage({
   });
   const isFirstTime = pastCount === 0;
 
-  const canVisit = isServiceableArea(settings, "visit", customer.address);
+  const visitState = visitEligibility(settings, "visit", customer.address);
+  const canVisit = visitState === "ok";
 
   const filtered = menus
     .filter((m) => (type ? m.deliveryType === type : true))
@@ -51,13 +52,30 @@ export default async function MenusPage({
         <FilterTab href="/liff/menus?type=online" label="オンライン" icon="online" active={type === "online"} />
       </div>
 
-      {!canVisit ? (
+      {visitState === "no_address" ? (
+        <div className="rounded-xl border border-warn-100 bg-warn-50 p-4 text-xs leading-relaxed text-warn-700">
+          <b>ご自宅へうかがうメニューには、ご住所のご登録が必要です。</b>
+          <p className="mt-1">
+            ご登録いただくと、下の「ご自宅へ訪問」のメニューもお選びいただけるようになります。
+          </p>
+          <Link
+            href="/liff/profile"
+            className="mt-3 inline-block rounded-pill bg-brand-600 px-5 py-2 text-xs font-bold text-white shadow-card"
+          >
+            ご住所を登録する
+          </Link>
+        </div>
+      ) : visitState === "out_of_area" ? (
         <div className="rounded-xl border border-ocean-500/30 bg-ocean-100 p-3 text-xs leading-relaxed text-ocean-600">
           <b>ご登録のご住所は訪問エリア外です。</b>
           <br />
           対応エリア: {settings.serviceAreas.join("・")}
           <br />
-          オンラインでの片付けコンサルは<b>全国どこからでもご利用いただけます</b>ので、ぜひご検討ください。
+          オンラインのメニューは<b>全国どこからでもご利用いただけます</b>ので、ぜひご検討ください。
+          <br />
+          <Link href="/liff/profile" className="mt-1 inline-block font-bold underline">
+            ご住所を変更する
+          </Link>
         </div>
       ) : null}
 
@@ -84,7 +102,13 @@ export default async function MenusPage({
                       <span className="text-xs text-slate-500">（税込）</span>
                     </p>
                     {blocked ? (
-                      <span className="text-xs text-slate-500">エリア外</span>
+                      visitState === "no_address" ? (
+                        <Link href="/liff/profile" className="text-xs font-bold text-brand-600 underline">
+                          住所を登録すると選べます
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-slate-500">エリア外</span>
+                      )
                     ) : (
                       <Link
                         href={`/liff/book/${m.id}`}

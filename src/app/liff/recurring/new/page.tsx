@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getCurrentCustomer } from "@/lib/session";
 import { getSettings } from "@/lib/settings";
-import { isServiceableArea } from "@/lib/availability";
+import { visitEligibility } from "@/lib/availability";
 import { createRecurringRule } from "@/app/actions";
 import { DeliveryBadge } from "@/components/ui";
 import { formatYen, todayStr, WEEKDAY_LABELS } from "@/lib/time";
@@ -16,7 +17,8 @@ export default async function NewRecurringPage() {
   ]);
   if (!customer) return null;
 
-  const canVisit = isServiceableArea(settings, "visit", customer.address);
+  const visitState = visitEligibility(settings, "visit", customer.address);
+  const canVisit = visitState === "ok";
   const selectable = menus.filter((m) => m.deliveryType === "online" || canVisit);
 
   return (
@@ -60,7 +62,14 @@ export default async function NewRecurringPage() {
               </label>
             ))}
           </div>
-          {!canVisit ? (
+          {visitState === "no_address" ? (
+            <p className="mt-2 text-2xs leading-relaxed text-warn-700">
+              ※ ご自宅へうかがうプランをお選びいただくには、ご住所のご登録が必要です。
+              <Link href="/liff/profile" className="ml-1 font-bold underline">
+                ご住所を登録する
+              </Link>
+            </p>
+          ) : visitState === "out_of_area" ? (
             <p className="mt-2 text-2xs text-ocean-600">
               ※ ご登録の住所は訪問エリア外のため、オンラインのプランのみ選択できます
             </p>

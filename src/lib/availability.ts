@@ -210,15 +210,32 @@ function describeMove(from: DeliveryType, to: DeliveryType): string {
   return "オンラインの切替";
 }
 
+/**
+ * 訪問できる状態かどうかを見分ける。
+ *
+ * 「住所がまだ無い」と「住所はあるがエリア外」は、お客様から見ればまったく別の話。
+ * 前者はご登録いただければ解決するが、後者はどうにもならない。
+ * ひとまとめに「エリア外」と出すと、登録すれば使える方を追い返してしまう。
+ */
+export type VisitEligibility = "ok" | "no_address" | "out_of_area";
+
+export function visitEligibility(
+  settings: AppSettings,
+  deliveryType: DeliveryType,
+  address: string | null | undefined
+): VisitEligibility {
+  if (deliveryType === "online") return "ok";
+  if (!address?.trim()) return "no_address";
+  return settings.serviceAreas.some((area) => address.includes(area)) ? "ok" : "out_of_area";
+}
+
 /** 訪問可能エリアかどうか（オンラインは常に true） */
 export function isServiceableArea(
   settings: AppSettings,
   deliveryType: DeliveryType,
   address: string | null | undefined
 ): boolean {
-  if (deliveryType === "online") return true;
-  if (!address) return false;
-  return settings.serviceAreas.some((area) => address.includes(area));
+  return visitEligibility(settings, deliveryType, address) === "ok";
 }
 
 /** 間取りに応じた所要時間の補正（訪問のみ） */

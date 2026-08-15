@@ -43,6 +43,22 @@ export default async function LiffHome() {
         </h1>
       </div>
 
+      {/* 住所が無いと訪問のメニューが一切選べない。行き止まりにしないための入口 */}
+      {!customer.address ? (
+        <Link
+          href="/liff/profile"
+          className="flex items-start gap-2.5 rounded-2xl border border-warn-100 bg-warn-50 p-4"
+        >
+          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" />
+          <span className="text-xs leading-relaxed text-warn-700">
+            <b>ご住所をご登録ください。</b>
+            <br />
+            ご自宅へうかがうメニューをご予約いただけるようになります。
+            オンラインのみをご利用の場合は、そのままで大丈夫です。
+          </span>
+        </Link>
+      ) : null}
+
       {next ? (
         <Link href={`/liff/reservations/${next.id}`} className="block">
           <article className="overflow-hidden rounded-card bg-brand-sheen text-white shadow-lift">
