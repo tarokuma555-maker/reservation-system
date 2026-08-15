@@ -163,7 +163,7 @@ export default async function AdminReservationDetail({
                 </SectionTitle>
                 <form action={completeReservation} className="flex flex-wrap items-end gap-2">
                   <input type="hidden" name="reservationId" value={reservation.id} />
-                  <select name="paymentStatus" className={`${inputClass} w-auto`}>
+                  <select name="paymentStatus" className={`${inputClass} !w-auto`}>
                     <option value="cash_received">現金でいただいた</option>
                     <option value="transfer_confirmed">お振込みを確認した</option>
                     <option value="unpaid">まだいただいていない</option>

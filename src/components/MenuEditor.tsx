@@ -131,7 +131,7 @@ export default function MenuEditor({
               list="menu-durations"
               defaultValue={v.durationMinutes}
               required
-              className={`${inputCls} w-32 tabular-nums`}
+              className={`${inputCls} !w-32 tabular-nums`}
             />
             <span className="mt-1.5 text-sm text-slate-500">分</span>
           </span>
@@ -155,7 +155,7 @@ export default function MenuEditor({
               step={100}
               defaultValue={v.price}
               required
-              className={`${inputCls} w-36 tabular-nums`}
+              className={`${inputCls} !w-36 tabular-nums`}
             />
             <span className="mt-1.5 text-sm text-slate-500">円</span>
           </span>
@@ -184,7 +184,7 @@ export default function MenuEditor({
             name="sortOrder"
             type="number"
             defaultValue={v.sortOrder}
-            className={`${inputCls} w-28 tabular-nums`}
+            className={`${inputCls} !w-28 tabular-nums`}
           />
         </label>
       </div>

@@ -197,7 +197,7 @@ export default async function InvoicesPage() {
                               type="number"
                               name="amount"
                               defaultValue={Math.floor(inv.totalAmount / 2)}
-                              className={`${inputClass} w-32 py-2 text-xs tabular-nums`}
+                              className={`${inputClass} !w-32 py-2 text-xs tabular-nums`}
                             />
                             <input
                               name="description"

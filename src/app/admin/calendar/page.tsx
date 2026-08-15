@@ -210,15 +210,18 @@ export default async function CalendarPage({
             <Field label="はじまる時間">
               <input type="time" name="time" defaultValue="13:00" step={1800} className={inputClass} />
             </Field>
-            <Field label="どのくらい" hint="分で入れてください">
-              <input
-                type="number"
-                name="minutes"
-                defaultValue={60}
-                step={30}
-                min={30}
-                className={`${inputClass} w-28`}
-              />
+            <Field label="どのくらい">
+              <span className="flex items-center gap-2">
+                <input
+                  type="number"
+                  name="minutes"
+                  defaultValue={60}
+                  step={30}
+                  min={30}
+                  className={`${inputClass} !w-24`}
+                />
+                <span className="text-sm text-slate-500">分</span>
+              </span>
             </Field>
             <Field label="なんの予定" className="min-w-[180px] flex-1">
               <input name="title" placeholder="通院・学校行事など" className={inputClass} />

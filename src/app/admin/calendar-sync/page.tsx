@@ -14,7 +14,7 @@ import {
 } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import GoogleConnectCard from "@/components/GoogleConnectCard";
-import { selectCalendarAction } from "@/app/connect-actions";
+import CalendarTargetForm from "@/components/CalendarTargetForm";
 import { addDays, formatRange, todayStr } from "@/lib/time";
 import {
   driftCheckAction,
@@ -110,22 +110,11 @@ export default async function CalendarSyncPage({
           <SectionTitle hint="ご予約を書き出す先です。ふだんお使いのものを選んでください">
             どのカレンダーに書き出すか
           </SectionTitle>
-          <form action={selectCalendarAction} className="flex flex-wrap items-end gap-3">
-            <Field label="書き出し先" className="min-w-[240px] flex-1">
-              <select name="calendarId" defaultValue={calendarId} className={inputClass}>
-                {calendars.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.summary}
-                    {c.primary ? "（ふだんお使いのカレンダー）" : ""}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Button type="submit" variant="secondary">
-              <Icon name="check" className="h-4 w-4" />
-              ここに書き出す
-            </Button>
-          </form>
+          <CalendarTargetForm
+            calendars={calendars}
+            current={calendarId}
+            inputClass={inputClass}
+          />
         </Card>
       ) : null}
 
@@ -259,14 +248,22 @@ export default async function CalendarSyncPage({
             <Field label="はじまる時間">
               <input type="time" name="time" defaultValue="13:00" step={1800} className={inputClass} />
             </Field>
-            <Field label="どのくらい" hint="分で入れてください">
-              <input
-                type="number"
-                name="minutes"
-                defaultValue={90}
-                step={30}
-                className={`${inputClass} w-28`}
-              />
+            {/*
+              補足を入力欄の下に置くと、その欄だけ背が高くなり、
+              横一列に並べたときに見出しが浮いて見える。単位は横に添える。
+            */}
+            <Field label="どのくらい">
+              <span className="flex items-center gap-2">
+                <input
+                  type="number"
+                  name="minutes"
+                  defaultValue={90}
+                  step={30}
+                  min={30}
+                  className={`${inputClass} !w-24`}
+                />
+                <span className="text-sm text-slate-500">分</span>
+              </span>
             </Field>
             <Field label="なんの予定" className="min-w-[180px] flex-1">
               <input name="summary" placeholder="通院" className={inputClass} />

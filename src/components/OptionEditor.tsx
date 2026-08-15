@@ -52,7 +52,7 @@ export default function OptionEditor({
             min={0}
             step={5}
             defaultValue={v.additionalMinutes}
-            className={`mt-1 ${inputCls} w-32 tabular-nums`}
+            className={`mt-1 ${inputCls} !w-32 tabular-nums`}
           />
         </label>
 
@@ -64,7 +64,7 @@ export default function OptionEditor({
             min={0}
             step={100}
             defaultValue={v.additionalPrice}
-            className={`mt-1 ${inputCls} w-36 tabular-nums`}
+            className={`mt-1 ${inputCls} !w-36 tabular-nums`}
           />
         </label>
 

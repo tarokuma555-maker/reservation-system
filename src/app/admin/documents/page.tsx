@@ -83,7 +83,7 @@ export default async function DocumentsPage({
                 name="min"
                 defaultValue={q.min}
                 placeholder="1000"
-                className={`${inputClass} w-32`}
+                className={`${inputClass} !w-32`}
               />
             </Field>
             <Field label="（これ以下）">
@@ -92,7 +92,7 @@ export default async function DocumentsPage({
                 name="max"
                 defaultValue={q.max}
                 placeholder="50000"
-                className={`${inputClass} w-32`}
+                className={`${inputClass} !w-32`}
               />
             </Field>
             <Field label="どこの" hint="一部だけでも見つかります" className="min-w-[180px] flex-1">

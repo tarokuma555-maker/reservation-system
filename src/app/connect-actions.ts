@@ -159,12 +159,36 @@ export async function disconnectGoogleAction(): Promise<void> {
   revalidatePath("/admin", "layout");
 }
 
-export async function selectCalendarAction(formData: FormData): Promise<void> {
+/**
+ * 書き出し先のカレンダーを決める。
+ *
+ * 以前は何も返しておらず、押しても画面が変わらないため
+ * 効いていないように見えていた。決まった先を読み上げて返す。
+ */
+export async function selectCalendarAction(
+  _prev: ConnectState,
+  formData: FormData
+): Promise<ConnectState> {
   await requireStaff();
+
   const calendarId = String(formData.get("calendarId") ?? "").trim();
-  if (!calendarId) return;
+  if (!calendarId) return { error: "書き出し先のカレンダーをえらんでください。" };
+
   await updateConnectionConfig("google_calendar", { calendarId });
+
+  // 選んだ先の名前を添える。IDだけだと、どれを選んだのか分からない。
+  const label = await calendarLabel(calendarId);
   revalidatePath("/admin/calendar-sync");
+  return { ok: `これから「${label}」に書き出します。` };
+}
+
+async function calendarLabel(calendarId: string): Promise<string> {
+  try {
+    const list = await listCalendars();
+    return list.find((c) => c.id === calendarId)?.summary ?? calendarId;
+  } catch {
+    return calendarId;
+  }
 }
 
 /** つながったままの状態で、いま本当に書き込めるかを確かめ直す */
