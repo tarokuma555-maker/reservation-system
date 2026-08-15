@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "./db";
 import { getLineCredentials } from "./line";
@@ -15,7 +16,7 @@ export const DEMO_CUSTOMER_COOKIE = "demo_customer_id";
  * デモでは便利だったが、本番でそれをやると
  * お客様が別のお客様の氏名・住所・電話番号を見てしまう。
  */
-export async function getCurrentCustomer() {
+export const getCurrentCustomer = cache(async function getCurrentCustomer() {
   const store = await cookies();
   const credentials = await getLineCredentials();
   const live = Boolean(credentials?.liffId);
@@ -34,7 +35,7 @@ export async function getCurrentCustomer() {
     if (found) return found;
   }
   return prisma.customer.findFirst({ orderBy: { createdAt: "asc" } });
-}
+});
 
 /** お客様側の画面が「本番の見分け方」で動いているか */
 export async function isLiffLive(): Promise<boolean> {
@@ -42,8 +43,8 @@ export async function isLiffLive(): Promise<boolean> {
   return Boolean(credentials?.liffId);
 }
 
-export async function getOwner() {
+export const getOwner = cache(async function getOwner() {
   const staff = await prisma.staff.findFirst({ where: { role: "owner" } });
   if (!staff) throw new Error("スタッフが登録されていません。npm run db:seed を実行してください。");
   return staff;
-}
+});

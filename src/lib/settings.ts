@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "./db";
 
 export type DeliveryType = "visit" | "online";
@@ -109,7 +110,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const SETTINGS_KEY = "app_settings";
 
-export async function getSettings(): Promise<AppSettings> {
+/**
+ * 設定の読み出し。
+ *
+ * 1回の画面表示で、枠組み・見出し・中身からそれぞれ呼ばれる。
+ * cache() で包むと、同じ表示のあいだは1回しかデータベースに行かない。
+ * データベースが遠い（海外）ほど効く。
+ */
+export const getSettings = cache(async function getSettings(): Promise<AppSettings> {
   const row = await prisma.setting.findUnique({ where: { key: SETTINGS_KEY } });
   if (!row) return DEFAULT_SETTINGS;
   try {
@@ -117,7 +125,7 @@ export async function getSettings(): Promise<AppSettings> {
   } catch {
     return DEFAULT_SETTINGS;
   }
-}
+});
 
 export async function saveSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
   const current = await getSettings();

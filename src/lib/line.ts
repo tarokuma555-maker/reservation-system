@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { prisma } from "./db";
+import { cache } from "react";
 import { getConnection, getCredentials } from "./connections";
 
 /**
@@ -33,14 +34,15 @@ function credentialsFromEnv(): LineCredentials | null {
   };
 }
 
-export async function getLineCredentials(): Promise<LineCredentials | null> {
+/** 1回の画面表示のあいだは、読み直さない（あちこちから呼ばれるため） */
+export const getLineCredentials = cache(async function getLineCredentials(): Promise<LineCredentials | null> {
   const { credentials } = await getCredentials<LineCredentials>("line", credentialsFromEnv);
   return credentials;
-}
+});
 
-export async function getLineConnection() {
+export const getLineConnection = cache(async function getLineConnection() {
   return getConnection("line", () => Boolean(process.env.LINE_CHANNEL_ACCESS_TOKEN));
-}
+});
 
 export async function isLineLive(): Promise<boolean> {
   const c = await getLineCredentials();

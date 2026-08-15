@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { DEMO_CUSTOMER_COOKIE, getCurrentCustomer, getOwner, isLiffLive } from "@/lib/session";
 import { requireStaff } from "@/lib/auth";
 import { LIFF_IDENTITY_READY } from "@/lib/readiness";
+import { presetFor } from "@/lib/richmenu-presets";
 import { getSettings, resolveCancelPolicy, saveSettings } from "@/lib/settings";
 import { addDays, addMinutes, formatRange, jst, now, toDateStr, todayStr } from "@/lib/time";
 import { layoutAdjustment } from "@/lib/availability";
@@ -616,7 +617,11 @@ export async function publishRichMenuAction(formData: FormData) {
 
   const id = String(formData.get("richMenuId"));
   const menu = await prisma.richMenu.findUniqueOrThrow({ where: { id } });
-  const areas = JSON.parse(menu.areas) as { label: string; icon: string; path: string }[];
+
+  // 中身はコード側の定義を使う。DBに保存された古い内容には行き先の無いボタンが
+  // 残っており、押しても最初の画面に戻るだけになっていた。
+  const preset = presetFor(menu.target);
+  const areas = preset.areas;
 
   // LIFF IDが無いとメニューから予約画面を開けない（開いても本人が分からない）。
   // 中途半端に公開せず、先に登録していただく。
@@ -629,8 +634,8 @@ export async function publishRichMenuAction(formData: FormData) {
   }
 
   const payload = buildRichMenuPayload({
-    name: menu.name,
-    chatBarText: menu.chatBarText,
+    name: preset.name,
+    chatBarText: preset.chatBarText,
     areas,
     liffId,
   });
@@ -661,7 +666,14 @@ export async function publishRichMenuAction(formData: FormData) {
   await prisma.richMenu.updateMany({ where: { target: menu.target }, data: { isPublished: false } });
   await prisma.richMenu.update({
     where: { id },
-    data: { isPublished: true, lineRichMenuId: richMenuId },
+    data: {
+      isPublished: true,
+      lineRichMenuId: richMenuId,
+      // 実際に出したものを残しておく（画面で見比べられるように）
+      name: preset.name,
+      chatBarText: preset.chatBarText,
+      areas: JSON.stringify(areas),
+    },
   });
 
   // 古いメニューはLINE側から片づける（残しても使われず、上限を圧迫するため）

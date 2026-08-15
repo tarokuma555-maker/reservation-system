@@ -14,6 +14,7 @@ import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { resolveChromiumPath } from "../src/lib/browser";
+import { RICH_MENU_PRESETS } from "../src/lib/richmenu-presets";
 
 const WIDTH = 2500;
 const HEIGHT = 1686;
@@ -36,34 +37,19 @@ const ICONS: Record<string, string> = {
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   receipt:
     '<path d="M6.25 2.75h11.5v18.5l-2.3-1.6-2.3 1.6-2.3-1.6-2.3 1.6-2.3-1.6z"/><path d="M9.5 8h5M9.5 12h5"/>',
+  user: '<circle cx="12" cy="8" r="3.75"/><path d="M4.75 20.25c0-3.6 3.25-6 7.25-6s7.25 2.4 7.25 6"/>',
 };
 
 type Area = { label: string; icon: string };
 
-const MENUS: { file: string; areas: Area[] }[] = [
-  {
-    file: "default.png",
-    areas: [
-      { label: "はじめての方へ", icon: "sparkle" },
-      { label: "料金・メニュー", icon: "list" },
-      { label: "予約する", icon: "calendar" },
-      { label: "定期利用", icon: "repeat" },
-      { label: "よくある質問", icon: "help" },
-      { label: "お問い合わせ", icon: "chat" },
-    ],
-  },
-  {
-    file: "booked.png",
-    areas: [
-      { label: "次回の予約", icon: "calendarCheck" },
-      { label: "予約を変更", icon: "edit" },
-      { label: "キャンセル", icon: "close" },
-      { label: "定期利用の管理", icon: "repeat" },
-      { label: "新しく予約", icon: "calendar" },
-      { label: "領収書", icon: "receipt" },
-    ],
-  },
-];
+/**
+ * 文字と押せる場所がずれると、押した先が変わってしまう。
+ * ラベルは必ず src/lib/richmenu-presets.ts と同じものを使う。
+ */
+const MENUS: { file: string; areas: Area[] }[] = RICH_MENU_PRESETS.map((preset) => ({
+  file: preset.target === "booked" ? "booked.png" : "default.png",
+  areas: preset.areas.map((a) => ({ label: a.label, icon: a.icon })),
+}));
 
 function cell(area: Area): string {
   return `

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "./db";
 import { getConnection, getCredentials, markConnectionResult } from "./connections";
 import { getOwnerStaffId } from "./staff";
@@ -37,13 +38,13 @@ function credentialsFromEnv(): GoogleCredentials | null {
   };
 }
 
-export async function getGoogleCredentials(): Promise<GoogleCredentials | null> {
+export const getGoogleCredentials = cache(async function getGoogleCredentials(): Promise<GoogleCredentials | null> {
   const { credentials } = await getCredentials<GoogleCredentials>(
     "google_calendar",
     credentialsFromEnv
   );
   return credentials;
-}
+});
 
 export async function getGoogleConnection() {
   return getConnection("google_calendar", () => credentialsFromEnv() !== null);

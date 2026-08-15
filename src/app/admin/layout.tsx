@@ -43,9 +43,8 @@ const NAV: { group: string; items: { href: string; label: string; icon: IconName
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const settings = await getSettings();
-  const line = await lineMode();
-  const google = await googleMode();
+  // 順番に待つと、そのぶんだけ表示が遅れる。まとめて取りに行く。
+  const [settings, line, google] = await Promise.all([getSettings(), lineMode(), googleMode()]);
   const demo = isDemoMode();
 
   return (
