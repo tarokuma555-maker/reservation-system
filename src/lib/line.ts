@@ -298,11 +298,23 @@ export type RichMenuArea = { label: string; icon: string; path: string };
  * Messaging API に登録するリッチメニューのJSONを組み立てる。
  * 2行×3列（2500×1686）の標準サイズ。
  */
+/**
+ * メニューから開くURLを組み立てる。
+ *
+ * ふつうのWebアドレスを入れてはいけない。LINEの中では開くものの
+ * 「LIFFとして」開かれないため、どなたが押したのか分からなくなる。
+ * liff.line.me 宛にすると、LINEが本人の情報を添えて開いてくれる。
+ */
+export function liffLink(liffId: string, path: string): string {
+  const suffix = path && !path.startsWith("/") ? `/${path}` : path;
+  return `https://liff.line.me/${liffId}${suffix ?? ""}`;
+}
+
 export function buildRichMenuPayload(params: {
   name: string;
   chatBarText: string;
   areas: RichMenuArea[];
-  liffBaseUrl: string;
+  liffId: string;
 }) {
   const cols = 3;
   const cellW = Math.floor(2500 / cols);
@@ -320,7 +332,7 @@ export function buildRichMenuPayload(params: {
         width: cellW,
         height: cellH,
       },
-      action: { type: "uri", label: a.label, uri: `${params.liffBaseUrl}${a.path}` },
+      action: { type: "uri", label: a.label, uri: liffLink(params.liffId, a.path) },
     })),
   };
 }

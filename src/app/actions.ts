@@ -35,6 +35,7 @@ import {
 import {
   buildRichMenuPayload,
   deleteRichMenu,
+  getLineCredentials,
   linkRichMenuToUser,
   registerRichMenu,
   setDefaultRichMenu,
@@ -617,14 +618,21 @@ export async function publishRichMenuAction(formData: FormData) {
   const menu = await prisma.richMenu.findUniqueOrThrow({ where: { id } });
   const areas = JSON.parse(menu.areas) as { label: string; icon: string; path: string }[];
 
-  const liffBaseUrl =
-    process.env.LIFF_BASE_URL ?? `${process.env.APP_BASE_URL ?? "http://127.0.0.1:3000"}/liff`;
+  // LIFF IDが無いとメニューから予約画面を開けない（開いても本人が分からない）。
+  // 中途半端に公開せず、先に登録していただく。
+  const credentials = await getLineCredentials();
+  const liffId = credentials?.liffId;
+  if (!liffId) {
+    throw new Error(
+      "先にLIFF IDを登録してください（手順4）。これが無いと、メニューを押しても予約画面を開けません。"
+    );
+  }
 
   const payload = buildRichMenuPayload({
     name: menu.name,
     chatBarText: menu.chatBarText,
     areas,
-    liffBaseUrl,
+    liffId,
   });
 
   // 背景画像はあらかじめ作って同梱してある（scripts/build-richmenu-images.ts）

@@ -47,6 +47,7 @@ export default async function LineSetupPage() {
         steps={[
           { label: "つなぐ", done: connected },
           { label: "受け口を伝える", done: connected },
+          { label: "予約画面をつなぐ", done: hasLiff },
           ...(LIFF_IDENTITY_READY ? [{ label: "メニューを出す", done: menuPublished }] : []),
         ]}
       />
@@ -242,7 +243,7 @@ export default async function LineSetupPage() {
                     type="submit"
                     variant={rm.isPublished ? "secondary" : "primary"}
                     className="w-full"
-                    disabled={!connected || !LIFF_IDENTITY_READY}
+                    disabled={!connected || !LIFF_IDENTITY_READY || !hasLiff}
                   >
                     <Icon name="send" className="h-4 w-4" />
                     {rm.isPublished ? "もう一度出しなおす" : "このメニューを出す"}
@@ -253,7 +254,19 @@ export default async function LineSetupPage() {
           })}
         </div>
 
-        {!LIFF_IDENTITY_READY ? (
+        {connected && !hasLiff ? (
+          <div className="mt-3 flex gap-3 rounded-card border border-warn-100 bg-warn-50 px-4 py-3.5">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" />
+            <div className="text-xs leading-relaxed text-warn-700">
+              <p className="font-bold">先に下の「手順4」をお願いします</p>
+              <p className="mt-1">
+                LIFF IDが無いと、メニューを押しても予約画面を開けません
+                （開いても、どなたが押したのか分からないためです）。
+                登録するとこのボタンが押せるようになります。
+              </p>
+            </div>
+          </div>
+        ) : !LIFF_IDENTITY_READY ? (
           <div className="mt-3 flex gap-3 rounded-card border border-warn-100 bg-warn-50 px-4 py-3.5">
             <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" />
             <div className="text-xs leading-relaxed text-warn-700">
