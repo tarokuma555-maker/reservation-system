@@ -1,5 +1,7 @@
 "use server";
 
+import path from "node:path";
+
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -30,7 +32,13 @@ import {
   syncAllReservations,
   syncReservationToCalendar,
 } from "@/lib/google-calendar";
-import { buildRichMenuPayload, linkRichMenuToUser, registerRichMenu } from "@/lib/line";
+import {
+  buildRichMenuPayload,
+  deleteRichMenu,
+  linkRichMenuToUser,
+  registerRichMenu,
+  setDefaultRichMenu,
+} from "@/lib/line";
 import { generateInvoicePdf } from "@/lib/pdf";
 import { parseReceipt, runOcr, suggestAccountCode, isSmallAmountException } from "@/lib/ocr";
 import {
@@ -602,22 +610,45 @@ export async function publishRichMenuAction(formData: FormData) {
   // お客様側の画面が「どなたが開いているか」を見分けられないうちに公開すると、
   // 他のお客様の氏名・住所が見えてしまうため。
   if (!LIFF_IDENTITY_READY) {
-    throw new Error(
-      "お客様側の本人確認がまだ実装されていないため、メニューを公開できません。"
-    );
+    throw new Error("お客様側の本人確認がまだ実装されていないため、メニューを公開できません。");
   }
+
   const id = String(formData.get("richMenuId"));
   const menu = await prisma.richMenu.findUniqueOrThrow({ where: { id } });
   const areas = JSON.parse(menu.areas) as { label: string; icon: string; path: string }[];
+
+  const liffBaseUrl =
+    process.env.LIFF_BASE_URL ?? `${process.env.APP_BASE_URL ?? "http://127.0.0.1:3000"}/liff`;
 
   const payload = buildRichMenuPayload({
     name: menu.name,
     chatBarText: menu.chatBarText,
     areas,
-    liffBaseUrl: process.env.LIFF_BASE_URL ?? "https://example.com/liff",
+    liffBaseUrl,
   });
 
-  const { richMenuId } = await registerRichMenu(payload);
+  // 背景画像はあらかじめ作って同梱してある（scripts/build-richmenu-images.ts）
+  const imagePath = path.join(
+    process.cwd(),
+    "public",
+    "richmenu",
+    menu.target === "booked" ? "booked.png" : "default.png"
+  );
+
+  const previousLineId = menu.lineRichMenuId;
+  const { richMenuId } = await registerRichMenu(payload, imagePath);
+
+  if (menu.target === "default") {
+    // はじめての方向けは、全員に出る既定のメニューにする
+    await setDefaultRichMenu(richMenuId);
+  } else {
+    // ご予約がある方向けは、その方にだけ結びつける
+    const withUpcoming = await prisma.customer.findMany({
+      where: { reservations: { some: { status: "confirmed", startAt: { gte: now() } } } },
+      select: { lineUserId: true },
+    });
+    for (const c of withUpcoming) await linkRichMenuToUser(c.lineUserId, richMenuId);
+  }
 
   await prisma.richMenu.updateMany({ where: { target: menu.target }, data: { isPublished: false } });
   await prisma.richMenu.update({
@@ -625,9 +656,10 @@ export async function publishRichMenuAction(formData: FormData) {
     data: { isPublished: true, lineRichMenuId: richMenuId },
   });
 
-  // 対象の顧客にリンクする
-  const customers = await prisma.customer.findMany({ select: { lineUserId: true } });
-  for (const c of customers) await linkRichMenuToUser(c.lineUserId, richMenuId);
+  // 古いメニューはLINE側から片づける（残しても使われず、上限を圧迫するため）
+  if (previousLineId && previousLineId !== richMenuId) {
+    await deleteRichMenu(previousLineId).catch(() => {});
+  }
 
   refresh();
 }

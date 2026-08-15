@@ -134,7 +134,8 @@ async function callLineApi(path: string, body: unknown, method = "POST") {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: method === "GET" ? undefined : JSON.stringify(body),
+    // GET と DELETE に本文を付けるとLINEに拒否される
+    body: method === "GET" || method === "DELETE" ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -324,13 +325,64 @@ export function buildRichMenuPayload(params: {
   };
 }
 
-/** リッチメニューを登録し、対象ユーザーにリンクする（実接続のときだけ実際に呼ばれる） */
-export async function registerRichMenu(payload: ReturnType<typeof buildRichMenuPayload>) {
+/**
+ * リッチメニューを登録する。
+ *
+ * LINEは**背景画像のないメニューを受け付けない**ため、作ったらすぐ画像を送る。
+ * 画像は同梱してある（本番のサーバーには日本語フォントもブラウザも無く、
+ * その場では作れないため、あらかじめ作って持たせている）。
+ */
+export async function registerRichMenu(
+  payload: ReturnType<typeof buildRichMenuPayload>,
+  imagePath: string
+) {
   if (!(await isLineLive())) {
     return { richMenuId: `mock-${Date.now()}`, mocked: true };
   }
+
   const res = (await callLineApi("/richmenu", payload)) as { richMenuId: string };
+
+  try {
+    await uploadRichMenuImage(res.richMenuId, imagePath);
+  } catch (e) {
+    // 画像を送れなかったメニューは使えない。中途半端なものを残さず片づける。
+    await deleteRichMenu(res.richMenuId).catch(() => {});
+    throw e;
+  }
+
   return { richMenuId: res.richMenuId, mocked: false };
+}
+
+/** 背景画像を送る。画像だけは別の宛先（api-data）になっている。 */
+async function uploadRichMenuImage(richMenuId: string, imagePath: string) {
+  const { readFile } = await import("node:fs/promises");
+  const image = await readFile(imagePath);
+
+  const credentials = await getLineCredentials();
+  const res = await fetch(`https://api-data.line.me/v2/bot/richmenu/${richMenuId}/content`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${credentials?.accessToken}`,
+      "Content-Type": "image/png",
+    },
+    body: new Uint8Array(image),
+  });
+
+  if (!res.ok) {
+    throw new Error(`メニューの画像を送れませんでした (${res.status}: ${await res.text()})`);
+  }
+}
+
+export async function deleteRichMenu(richMenuId: string) {
+  if (!(await isLineLive())) return;
+  await callLineApi(`/richmenu/${richMenuId}`, null, "DELETE");
+}
+
+/** すべての方に出す既定のメニューにする */
+export async function setDefaultRichMenu(richMenuId: string) {
+  if (!(await isLineLive())) return { mocked: true };
+  await callLineApi(`/user/all/richmenu/${richMenuId}`, {}, "POST");
+  return { mocked: false };
 }
 
 export async function linkRichMenuToUser(lineUserId: string, richMenuId: string) {
