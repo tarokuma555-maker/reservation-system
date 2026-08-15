@@ -1,5 +1,5 @@
 import { getSettings } from "@/lib/settings";
-import { updateSettingsAction } from "@/app/actions";
+import SettingsForm from "@/components/SettingsForm";
 import { Card, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { CONFIRM_PHRASE, demoDataCounts, isDemoData } from "@/lib/reset";
@@ -48,7 +48,7 @@ export default async function SettingsPage() {
         </div>
       ) : null}
 
-      <form action={updateSettingsAction} className="space-y-6">
+      <SettingsForm>
         {/* ------------ お店の情報 ------------ */}
         <Card>
           <SectionTitle hint="領収書や請求書に、そのまま印字されます">お店の情報</SectionTitle>
@@ -244,17 +244,7 @@ export default async function SettingsPage() {
           </div>
         </Card>
 
-        {/* 画面のどこにいても押せるように下に貼りつくが、入力欄に重ならないよう帯にする */}
-        <div className="sticky bottom-0 -mx-1 flex items-center justify-end gap-4 border-t border-slate-200/80 bg-ground/95 px-1 py-3 backdrop-blur">
-          <p className="text-2xs text-slate-500">
-            変えたところは、保存を押すまで反映されません
-          </p>
-          <button className="inline-flex items-center gap-2 rounded-pill bg-brand-600 px-7 py-3 text-sm font-bold text-white shadow-lift transition hover:bg-brand-700">
-            <Icon name="check" className="h-4 w-4" />
-            この内容で保存する
-          </button>
-        </div>
-      </form>
+      </SettingsForm>
 
       {/* ------------ キャンセルの決まり ------------ */}
       <Card>

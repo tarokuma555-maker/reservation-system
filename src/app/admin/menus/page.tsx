@@ -4,10 +4,9 @@ import { calculateTax } from "@/lib/tax";
 import { Card, DeliveryBadge, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { formatYen } from "@/lib/time";
-import { MenuEditorToggle } from "@/components/MenuEditor";
 import AddMenuPanel from "@/components/AddMenuPanel";
+import MenuRowActions from "@/components/MenuRowActions";
 import OptionEditor, { AddOptionPanel } from "@/components/OptionEditor";
-import { deleteMenuAction, toggleMenuPublishedAction } from "@/app/admin/menu-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -111,9 +110,10 @@ export default async function MenusAdminPage() {
                   <p className="mt-2 text-2xs text-slate-500">{notes.join(" ／ ")}</p>
                 ) : null}
 
-                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-                  <MenuEditorToggle
+                <div className="mt-3 border-t border-slate-100 pt-3">
+                  <MenuRowActions
                     categories={categories}
+                    usedCount={used}
                     values={{
                       id: m.id,
                       name: m.name,
@@ -129,28 +129,6 @@ export default async function MenusAdminPage() {
                       applyLayoutAdjust: m.applyLayoutAdjust,
                     }}
                   />
-
-                  <form action={toggleMenuPublishedAction}>
-                    <input type="hidden" name="id" value={m.id} />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1 rounded-pill border border-slate-200 bg-surface px-3.5 py-1.5 text-2xs font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700"
-                    >
-                      <Icon name={m.isPublished ? "close" : "check"} className="h-3.5 w-3.5" />
-                      {m.isPublished ? "出すのをやめる" : "お客様に出す"}
-                    </button>
-                  </form>
-
-                  <form action={deleteMenuAction} className="ml-auto">
-                    <input type="hidden" name="id" value={m.id} />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1 rounded-pill border border-bad-100 bg-surface px-3.5 py-1.5 text-2xs font-bold text-bad-700 transition hover:bg-bad-50"
-                    >
-                      <Icon name="trash" className="h-3.5 w-3.5" />
-                      {used > 0 ? "消す（出すのをやめます）" : "消す"}
-                    </button>
-                  </form>
                 </div>
 
                 {used > 0 ? (

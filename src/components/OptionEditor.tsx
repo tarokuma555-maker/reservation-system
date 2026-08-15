@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { saveOptionAction, deleteOptionAction, type MenuState } from "@/app/admin/menu-actions";
+import { FormResult, SubmitButton } from "@/components/FormFeedback";
 import { Icon } from "@/components/Icon";
 
 type OptionValues = {
@@ -21,23 +22,13 @@ export default function OptionEditor({
   values?: OptionValues;
   onDone?: () => void;
 }) {
-  const [state, formAction, pending] = useActionState<MenuState, FormData>(saveOptionAction, {});
+  const [state, formAction] = useActionState<MenuState, FormData>(saveOptionAction, {});
+  const [delState, delAction] = useActionState<MenuState, FormData>(deleteOptionAction, {});
   const v = values ?? { name: "", additionalMinutes: 0, additionalPrice: 0 };
 
   return (
     <div className="space-y-3">
-      {state.ok ? (
-        <p className="flex items-center gap-1.5 text-xs font-bold text-good-700">
-          <Icon name="check" className="h-4 w-4 shrink-0" strokeWidth={2.6} />
-          {state.ok}
-        </p>
-      ) : null}
-      {state.error ? (
-        <p className="flex items-start gap-2 rounded-xl border border-bad-100 bg-bad-50 px-4 py-2.5 text-xs text-bad-700">
-          <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0" />
-          {state.error}
-        </p>
-      ) : null}
+      <FormResult ok={state.ok ?? delState.ok} error={state.error ?? delState.error} />
 
       <form action={formAction} className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
         {values?.id ? <input type="hidden" name="id" value={values.id} /> : null}
@@ -78,13 +69,9 @@ export default function OptionEditor({
         </label>
 
         <div className="flex items-end gap-2">
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-pill bg-brand-600 px-5 py-2.5 text-xs font-bold text-white shadow-card transition hover:bg-brand-700 disabled:opacity-45"
-          >
-            {pending ? "保存中…" : "保存"}
-          </button>
+          <SubmitButton size="sm" icon="check" pendingLabel="保存しています…" className="px-5 py-2.5">
+            保存
+          </SubmitButton>
           {onDone ? (
             <button
               type="button"
@@ -98,15 +85,17 @@ export default function OptionEditor({
       </form>
 
       {values?.id ? (
-        <form action={deleteOptionAction}>
+        <form action={delAction}>
           <input type="hidden" name="id" value={values.id} />
-          <button
-            type="submit"
-            className="inline-flex items-center gap-1 text-2xs font-bold text-bad-700 hover:underline"
+          <SubmitButton
+            variant="danger"
+            size="sm"
+            icon="trash"
+            pendingLabel="消しています…"
+            confirm={`「${v.name}」を消します。よろしいですか？`}
           >
-            <Icon name="trash" className="h-3.5 w-3.5" />
             これを消す
-          </button>
+          </SubmitButton>
         </form>
       ) : null}
     </div>

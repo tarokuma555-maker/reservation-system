@@ -605,14 +605,23 @@ export async function simulatePersonalEventAction(formData: FormData) {
 
 /* ---------------- LINE ---------------- */
 
-export async function publishRichMenuAction(formData: FormData) {
+/**
+ * LINEの下に出るメニューを公開する。
+ *
+ * 例外を投げるとエラー画面になってしまい、何が起きたのか分からない。
+ * できた・できなかったを、押した場所のすぐそばに返す。
+ */
+export async function publishRichMenuAction(
+  _prev: { ok?: string; error?: string },
+  formData: FormData
+): Promise<{ ok?: string; error?: string }> {
   await requireStaff();
 
   // 画面のボタンは塞いであるが、サーバー側でも止める。
   // お客様側の画面が「どなたが開いているか」を見分けられないうちに公開すると、
   // 他のお客様の氏名・住所が見えてしまうため。
   if (!LIFF_IDENTITY_READY) {
-    throw new Error("お客様側の本人確認がまだ実装されていないため、メニューを公開できません。");
+    return { error: "お客様側の本人確認がまだできていないため、メニューを公開できません。" };
   }
 
   const id = String(formData.get("richMenuId"));
@@ -628,9 +637,10 @@ export async function publishRichMenuAction(formData: FormData) {
   const credentials = await getLineCredentials();
   const liffId = credentials?.liffId;
   if (!liffId) {
-    throw new Error(
-      "先にLIFF IDを登録してください（手順4）。これが無いと、メニューを押しても予約画面を開けません。"
-    );
+    return {
+      error:
+        "先にLIFF IDを登録してください（手順3）。これが無いと、メニューを押しても予約画面を開けません。",
+    };
   }
 
   const payload = buildRichMenuPayload({
@@ -682,6 +692,9 @@ export async function publishRichMenuAction(formData: FormData) {
   }
 
   refresh();
+  return {
+    ok: `「${preset.name}」をLINEに出しました。トーク画面を開き直すと、新しいメニューになります。`,
+  };
 }
 
 /** デモ用: LINEからのWebhookを疑似的に流し込む */
@@ -885,12 +898,39 @@ export async function ensureFiscalYearAction() {
 
 /* ---------------- 設定 ---------------- */
 
-export async function updateSettingsAction(formData: FormData) {
+/**
+ * 設定の保存。
+ *
+ * 保存できたことを画面に返す。以前は何も返しておらず、押しても
+ * 変わったのかどうか分からなかった。
+ */
+export async function updateSettingsAction(
+  _prev: { ok?: string; error?: string },
+  formData: FormData
+): Promise<{ ok?: string; error?: string }> {
   await requireStaff();
   const num = (k: string) => Number(formData.get(k));
+
+  const issuerName = String(formData.get("issuerName") ?? "").trim();
+  if (!issuerName) return { error: "お店の名前を入れてください。書類に印字されます。" };
+
+  const registrationNumber = String(formData.get("registrationNumber") ?? "").trim();
+  // 「T」+13桁。空のままは許す（まだ番号が来ていない場合があるため）
+  if (registrationNumber && !/^T\d{13}$/.test(registrationNumber)) {
+    return {
+      error:
+        "インボイスの登録番号は「T」ではじまる14文字です（例: T1234567890123）。まだ無ければ空にしてください。",
+    };
+  }
+
+  const areas = String(formData.get("serviceAreas") ?? "")
+    .split(/[,、\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   await saveSettings({
-    issuerName: String(formData.get("issuerName")),
-    registrationNumber: String(formData.get("registrationNumber")),
+    issuerName,
+    registrationNumber,
     fiscalYearEndMonth: num("fiscalYearEndMonth"),
     taxMethod: String(formData.get("taxMethod")) as "honsoku" | "kani",
     roundingMode: String(formData.get("roundingMode")) as "floor" | "ceil" | "round",
@@ -906,10 +946,13 @@ export async function updateSettingsAction(formData: FormData) {
     cutoffHours: { visit: num("cutoff_visit"), online: num("cutoff_online") },
     maxPerDay: { visit: num("max_visit"), online: num("max_online") },
     bookingWindowDays: num("bookingWindowDays"),
-    serviceAreas: String(formData.get("serviceAreas"))
-      .split(/[,、\s]+/)
-      .map((s) => s.trim())
-      .filter(Boolean),
+    serviceAreas: areas,
   });
   refresh();
+
+  return {
+    ok: `保存しました。${
+      areas.length ? `うかがえる地域は「${areas.join("・")}」です。` : "うかがえる地域は未設定です。"
+    }`,
+  };
 }

@@ -10,7 +10,7 @@ import CopyField from "@/components/CopyField";
 import LineConnectForm from "@/components/LineConnectForm";
 import LiffIdForm from "@/components/LiffIdForm";
 import { disconnectLineAction, recheckLineAction } from "@/app/connect-actions";
-import { publishRichMenuAction } from "@/app/actions";
+import PublishRichMenuForm from "@/components/PublishRichMenuForm";
 
 export const dynamic = "force-dynamic";
 
@@ -284,18 +284,11 @@ export default async function LineSetupPage() {
                   ))}
                 </div>
 
-                <form action={publishRichMenuAction} className="mt-3">
-                  <input type="hidden" name="richMenuId" value={rm.id} />
-                  <Button
-                    type="submit"
-                    variant={rm.isPublished ? "secondary" : "primary"}
-                    className="w-full"
-                    disabled={!connected || !LIFF_IDENTITY_READY || !hasLiff}
-                  >
-                    <Icon name="send" className="h-4 w-4" />
-                    {rm.isPublished ? "もう一度出しなおす" : "このメニューを出す"}
-                  </Button>
-                </form>
+                <PublishRichMenuForm
+                  richMenuId={rm.id}
+                  isPublished={rm.isPublished}
+                  disabled={!connected || !LIFF_IDENTITY_READY || !hasLiff}
+                />
               </div>
             );
           })}

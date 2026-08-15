@@ -90,33 +90,56 @@ export async function updateMenuAction(
  * すでにご予約で使われている場合は消さず、「出さない」に切り替える。
  * 消してしまうと、過去のご予約から何のお仕事だったのかが辿れなくなる。
  */
-export async function deleteMenuAction(formData: FormData): Promise<void> {
+export async function deleteMenuAction(
+  _prev: MenuState,
+  formData: FormData
+): Promise<MenuState> {
   await requireStaff();
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  if (!id) return { error: "どのメニューか分かりませんでした。" };
+
+  const menu = await prisma.menu.findUnique({ where: { id } });
+  if (!menu) return { error: "そのメニューは見つかりませんでした。" };
 
   const used = await prisma.reservation.count({ where: { menuId: id } });
   if (used > 0) {
     await prisma.menu.update({ where: { id }, data: { isPublished: false } });
-  } else {
-    await prisma.menuOption.deleteMany({ where: { menuId: id } });
-    await prisma.menu.delete({ where: { id } });
+    revalidatePath("/admin/menus");
+    revalidatePath("/liff", "layout");
+    return {
+      ok: `「${menu.name}」はご予約${used}件で使われているため、消さずに「出さない」に切り替えました。`,
+    };
   }
+
+  await prisma.menuOption.deleteMany({ where: { menuId: id } });
+  await prisma.menu.delete({ where: { id } });
 
   revalidatePath("/admin/menus");
   revalidatePath("/liff", "layout");
+  return { ok: `「${menu.name}」を消しました。` };
 }
 
 /** 一覧から、出す・出さないだけを切り替える */
-export async function toggleMenuPublishedAction(formData: FormData): Promise<void> {
+export async function toggleMenuPublishedAction(
+  _prev: MenuState,
+  formData: FormData
+): Promise<MenuState> {
   await requireStaff();
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  if (!id) return { error: "どのメニューか分かりませんでした。" };
+
   const menu = await prisma.menu.findUnique({ where: { id } });
-  if (!menu) return;
-  await prisma.menu.update({ where: { id }, data: { isPublished: !menu.isPublished } });
+  if (!menu) return { error: "そのメニューは見つかりませんでした。" };
+
+  const next = !menu.isPublished;
+  await prisma.menu.update({ where: { id }, data: { isPublished: next } });
   revalidatePath("/admin/menus");
   revalidatePath("/liff", "layout");
+  return {
+    ok: next
+      ? `「${menu.name}」をお客様の画面に出しました。`
+      : `「${menu.name}」を、お客様の画面に出さないようにしました。`,
+  };
 }
 
 /* ---------------- 追加でえらべるもの ---------------- */
@@ -157,17 +180,27 @@ export async function saveOptionAction(
   return { ok: id ? "保存しました。" : `「${name}」を追加しました。` };
 }
 
-export async function deleteOptionAction(formData: FormData): Promise<void> {
+export async function deleteOptionAction(
+  _prev: MenuState,
+  formData: FormData
+): Promise<MenuState> {
   await requireStaff();
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  if (!id) return { error: "どれか分かりませんでした。" };
+
+  const option = await prisma.menuOption.findUnique({ where: { id } });
+  if (!option) return { error: "見つかりませんでした。" };
 
   const used = await prisma.reservationOption.count({ where: { optionId: id } });
   if (used > 0) {
     await prisma.menuOption.update({ where: { id }, data: { isPublished: false } });
-  } else {
-    await prisma.menuOption.delete({ where: { id } });
+    revalidatePath("/admin/menus");
+    revalidatePath("/liff", "layout");
+    return { ok: `「${option.name}」はご予約で使われているため、出さないようにしました。` };
   }
+
+  await prisma.menuOption.delete({ where: { id } });
   revalidatePath("/admin/menus");
   revalidatePath("/liff", "layout");
+  return { ok: `「${option.name}」を消しました。` };
 }

@@ -6,6 +6,7 @@ import {
   updateMenuAction,
   type MenuState,
 } from "@/app/admin/menu-actions";
+import { FormResult, SubmitButton } from "@/components/FormFeedback";
 import { Icon } from "@/components/Icon";
 
 export type MenuValues = {
@@ -56,7 +57,7 @@ export default function MenuEditor({
   onDone?: () => void;
 }) {
   const editing = Boolean(values?.id);
-  const [state, formAction, pending] = useActionState<MenuState, FormData>(
+  const [state, formAction] = useActionState<MenuState, FormData>(
     editing ? updateMenuAction : createMenuAction,
     {}
   );
@@ -66,18 +67,7 @@ export default function MenuEditor({
     <form action={formAction} className="space-y-4">
       {values?.id ? <input type="hidden" name="id" value={values.id} /> : null}
 
-      {state.ok ? (
-        <p className="flex items-center gap-1.5 rounded-xl border border-good-100 bg-good-50 px-4 py-2.5 text-xs font-bold text-good-700">
-          <Icon name="check" className="h-4 w-4 shrink-0" strokeWidth={2.6} />
-          {state.ok}
-        </p>
-      ) : null}
-      {state.error ? (
-        <p className="flex items-start gap-2 rounded-xl border border-bad-100 bg-bad-50 px-4 py-2.5 text-xs text-bad-700">
-          <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0" />
-          {state.error}
-        </p>
-      ) : null}
+      <FormResult ok={state.ok} error={state.error} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block sm:col-span-2">
@@ -127,18 +117,29 @@ export default function MenuEditor({
           <span className="mt-0.5 block text-xs text-slate-500">
             この長さで空き時間を計算します
           </span>
+          {/*
+            いちばん小さい値は「きざみ」の倍数にしておくこと。
+            min=1 step=5 と書くと、選べるのが 1,6,11…121 になり、
+            121分のような中途半端な数字しか入らなくなる。
+          */}
           <span className="flex items-center gap-2">
             <input
               name="durationMinutes"
               type="number"
-              min={1}
+              min={5}
               step={5}
+              list="menu-durations"
               defaultValue={v.durationMinutes}
               required
               className={`${inputCls} w-32 tabular-nums`}
             />
             <span className="mt-1.5 text-sm text-slate-500">分</span>
           </span>
+          <datalist id="menu-durations">
+            {[30, 45, 60, 90, 120, 150, 180, 240].map((n) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
         </label>
 
         <label className="block">
@@ -208,14 +209,9 @@ export default function MenuEditor({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center gap-1.5 rounded-pill bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 disabled:opacity-45"
-        >
-          <Icon name="check" className="h-4 w-4" />
-          {pending ? "保存しています…" : editing ? "この内容で保存する" : "このメニューを追加する"}
-        </button>
+        <SubmitButton icon="check" pendingLabel="保存しています…">
+          {editing ? "この内容で保存する" : "このメニューを追加する"}
+        </SubmitButton>
         {onDone ? (
           <button
             type="button"
