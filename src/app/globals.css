@@ -90,6 +90,24 @@ summary:focus-visible {
   scrollbar-width: thin;
 }
 
+/*
+ * 入力欄をタップしたときに画面が勝手に拡大されるのを防ぐ。
+ *
+ * iOSのSafari（LINEの中の画面もこれ）は、文字が16pxより小さい入力欄に
+ * カーソルが入ると、読めるようにと画面を拡大する。拡大されたままになって
+ * 操作しづらいので、指で触る端末では入力欄だけ16pxにする。
+ *
+ * 「拡大禁止」の指定で消す手もあるが、それだと本当に拡大したい方まで
+ * 拡大できなくなるので採らない。
+ */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

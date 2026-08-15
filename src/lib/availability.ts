@@ -226,7 +226,35 @@ export function visitEligibility(
 ): VisitEligibility {
   if (deliveryType === "online") return "ok";
   if (!address?.trim()) return "no_address";
-  return settings.serviceAreas.some((area) => address.includes(area)) ? "ok" : "out_of_area";
+  return settings.serviceAreas.some((area) => addressMatchesArea(address, area))
+    ? "ok"
+    : "out_of_area";
+}
+
+/**
+ * 住所がその地域のものかどうか。
+ *
+ * 単純な文字の一致だと、よその市の同名の区まで通ってしまう。
+ * 「中央区」「港区」「西区」あたりは政令指定都市にいくつもあり、
+ * たとえば「北海道札幌市中央区」が東京の中央区として通る。
+ * うかがえない土地のご予約が入ってしまうので、ここで見分ける。
+ *
+ * 政令指定都市の区は必ず「〜市◯◯区」と書かれ、東京の区は「東京都◯◯区」と書かれる。
+ * そこで「直前が『市』なら別の土地」と見なす。
+ * 設定側に「東京都中央区」のように長く書いた場合は、そのまま一致すればよい。
+ */
+function addressMatchesArea(address: string, area: string): boolean {
+  const target = area.trim();
+  if (!target) return false;
+
+  let from = 0;
+  for (;;) {
+    const at = address.indexOf(target, from);
+    if (at === -1) return false;
+    // 先頭にある、または直前が「市」でなければ、その土地のものとみなす
+    if (at === 0 || address[at - 1] !== "市") return true;
+    from = at + 1;
+  }
 }
 
 /** 訪問可能エリアかどうか（オンラインは常に true） */

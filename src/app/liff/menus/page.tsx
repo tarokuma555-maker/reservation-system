@@ -42,6 +42,10 @@ export default async function MenusPage({
     return acc;
   }, {});
 
+  // 訪問についてのお断りは、訪問のメニューが並んでいるときだけ出す。
+  // オンラインだけを見ているときに出すと、オンラインも駄目なのだと読めてしまう。
+  const showVisitNotice = !canVisit && filtered.some((m) => m.deliveryType === "visit");
+
   return (
     <div className="space-y-4 p-4">
       <h1 className="text-lg font-bold tracking-tight text-ink">メニューを選ぶ</h1>
@@ -52,30 +56,51 @@ export default async function MenusPage({
         <FilterTab href="/liff/menus?type=online" label="オンライン" icon="online" active={type === "online"} />
       </div>
 
-      {visitState === "no_address" ? (
+      {showVisitNotice && visitState === "no_address" ? (
         <div className="rounded-xl border border-warn-100 bg-warn-50 p-4 text-xs leading-relaxed text-warn-700">
           <b>ご自宅へうかがうメニューには、ご住所のご登録が必要です。</b>
           <p className="mt-1">
-            ご登録いただくと、下の「ご自宅へ訪問」のメニューもお選びいただけるようになります。
+            オンラインのメニューは、ご住所のご登録なしで
+            <b>いまそのままご予約いただけます</b>。
           </p>
-          <Link
-            href="/liff/profile"
-            className="mt-3 inline-block rounded-pill bg-brand-600 px-5 py-2 text-xs font-bold text-white shadow-card"
-          >
-            ご住所を登録する
-          </Link>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/liff/profile"
+              className="inline-block rounded-pill bg-brand-600 px-5 py-2 text-xs font-bold text-white shadow-card"
+            >
+              ご住所を登録する
+            </Link>
+            <Link
+              href="/liff/menus?type=online"
+              className="inline-block rounded-pill border border-warn-100 bg-surface px-5 py-2 text-xs font-bold text-warn-700"
+            >
+              オンラインを見る
+            </Link>
+          </div>
         </div>
-      ) : visitState === "out_of_area" ? (
-        <div className="rounded-xl border border-ocean-500/30 bg-ocean-100 p-3 text-xs leading-relaxed text-ocean-600">
-          <b>ご登録のご住所は訪問エリア外です。</b>
-          <br />
-          対応エリア: {settings.serviceAreas.join("・")}
-          <br />
-          オンラインのメニューは<b>全国どこからでもご利用いただけます</b>ので、ぜひご検討ください。
-          <br />
-          <Link href="/liff/profile" className="mt-1 inline-block font-bold underline">
-            ご住所を変更する
-          </Link>
+      ) : showVisitNotice ? (
+        <div className="rounded-xl border border-ocean-500/30 bg-ocean-100 p-4 text-xs leading-relaxed text-ocean-600">
+          <b>ご登録のご住所は、ご自宅へうかがえる地域の外です。</b>
+          <p className="mt-1">
+            うかがえる地域: {settings.serviceAreas.join("・")}
+          </p>
+          <p className="mt-1">
+            オンラインのメニューは<b>全国どこからでもご利用いただけます</b>。
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/liff/menus?type=online"
+              className="inline-block rounded-pill bg-brand-600 px-5 py-2 text-xs font-bold text-white shadow-card"
+            >
+              オンラインを見る
+            </Link>
+            <Link
+              href="/liff/profile"
+              className="inline-block rounded-pill border border-ocean-500/30 bg-surface px-5 py-2 text-xs font-bold text-ocean-600"
+            >
+              ご住所を変更する
+            </Link>
+          </div>
         </div>
       ) : null}
 
@@ -127,6 +152,14 @@ export default async function MenusPage({
           </div>
         </section>
       ))}
+
+      {filtered.length === 0 ? (
+        <p className="rounded-xl border border-slate-200 bg-surface px-4 py-6 text-center text-xs leading-relaxed text-slate-500">
+          ただいまご案内できるメニューがありません。
+          <br />
+          恐れ入りますが、しばらくしてからお試しください。
+        </p>
+      ) : null}
 
       <p className="pt-2 text-center text-xs text-slate-500">
         定期でのご利用をご希望の方は{" "}
