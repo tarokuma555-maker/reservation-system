@@ -14,6 +14,7 @@ import {
 } from "@/lib/connections";
 import { getLineCredentials, testLineCredentials, type LineCredentials } from "@/lib/line";
 import { googleRedirectUri, GOOGLE_OAUTH_STATE_COOKIE } from "@/lib/google-oauth";
+import { getVisionCredentials, testVisionCredentials } from "@/lib/ocr";
 import {
   buildConsentUrl,
   getGoogleCredentials,
@@ -213,4 +214,60 @@ export async function fetchCalendarChoices(): Promise<
   } catch {
     return [];
   }
+}
+
+/* ---------------- レシートの読み取り（Cloud Vision） ---------------- */
+
+/**
+ * 読み取り用の合いことばを入れる。
+ *
+ * 保存する前に、実際にGoogleへ1回問い合わせて使えるか確かめる。
+ * まちがったまま保存すると、レシートを撮ったときに初めて失敗が分かる。
+ */
+export async function connectVisionAction(
+  _prev: ConnectState,
+  formData: FormData
+): Promise<ConnectState> {
+  const staff = await requireStaff();
+
+  const apiKey = String(formData.get("apiKey") ?? "").trim();
+  if (!apiKey) return { error: "合いことば（APIキー）を貼り付けてください。" };
+
+  const result = await testVisionCredentials(apiKey);
+  if (!result.ok) return { error: result.error };
+
+  await saveConnection({
+    provider: "google_vision",
+    credentials: { apiKey },
+    label: "レシートの読み取り",
+    actorName: staff.name,
+  });
+
+  revalidatePath("/admin", "layout");
+  return { ok: "つながりました。これから写真のレシートをそのまま読み取ります。" };
+}
+
+export async function disconnectVisionAction(): Promise<void> {
+  const staff = await requireStaff();
+  await disconnect("google_vision", staff.name);
+  revalidatePath("/admin", "layout");
+}
+
+/** つながったままの状態で、いま本当に読み取れるかを確かめ直す */
+export async function recheckVisionAction(
+  _prev: ConnectState,
+  _formData: FormData
+): Promise<ConnectState> {
+  await requireStaff();
+  const credentials = await getVisionCredentials();
+  if (!credentials?.apiKey) return { error: "まだつながっていません。" };
+
+  const result = await testVisionCredentials(credentials.apiKey);
+  const { markConnectionResult } = await import("@/lib/connections");
+  await markConnectionResult(
+    "google_vision",
+    result.ok ? { ok: true } : { ok: false, error: result.error }
+  );
+  revalidatePath("/admin", "layout");
+  return result.ok ? { ok: "いま確かめました。問題なく読み取れます。" } : { error: result.error };
 }

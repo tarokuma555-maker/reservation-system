@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { ocrMode, SAMPLE_RECEIPTS } from "@/lib/ocr";
+import { getVisionConnection, ocrMode, SAMPLE_RECEIPTS } from "@/lib/ocr";
+import VisionConnectCard from "@/components/VisionConnectCard";
 import { ensureChartOfAccounts } from "@/lib/accounting";
 import { Card, Empty, ModeBanner, ProvisionalNote, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/Icon";
@@ -26,7 +27,8 @@ export default async function ExpensesPage() {
     }),
   ]);
 
-  const live = ocrMode() === "live";
+  const [mode, vision] = await Promise.all([ocrMode(), getVisionConnection()]);
+  const live = mode === "live";
   const total = expenses.reduce((s, e) => s + e.amount, 0);
 
   return (
@@ -49,10 +51,24 @@ export default async function ExpensesPage() {
         ) : (
           <p>
             読み取ったあとの処理（日にち・金額・お店・登録番号のとり出しと、費用の種類の判定）は
-            本番とまったく同じです。ここで見えている動きが、そのまま本番の動きになります。
+            本番とまったく同じです。<b>下の「写真から読み取れるようにする」</b>でつなぐと、
+            撮った写真をそのまま読むようになります。
           </p>
         )}
       </ModeBanner>
+
+      <section>
+        <SectionTitle hint="つなぐと、撮った写真をそのまま読み取ります。つながなくても、経費は手で入れられます">
+          写真から読み取れるようにする
+        </SectionTitle>
+        <Card>
+          <VisionConnectCard
+            connected={vision.connected}
+            label={vision.label}
+            lastError={vision.status === "error" ? vision.lastError : null}
+          />
+        </Card>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section>
@@ -63,7 +79,7 @@ export default async function ExpensesPage() {
             <ReceiptScanner
               accounts={accounts.map((a) => ({ code: a.code, name: a.name }))}
               samples={Object.entries(SAMPLE_RECEIPTS).map(([key, v]) => ({ key, label: v.label }))}
-              mode={ocrMode()}
+              mode={mode}
             />
           </Card>
         </section>

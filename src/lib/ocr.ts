@@ -1,27 +1,91 @@
 /**
  * レシートOCRと、その結果から仕訳候補を組み立てる処理。
  *
- * GOOGLE_VISION_API_KEY があれば Cloud Vision API を呼び、
- * なければ同梱のサンプルレシート文面を返す（モックモード）。
+ * 合いことば（APIキー）があれば Cloud Vision API を呼び、
+ * なければ同梱のサンプルレシート文面を返す（お試しモード）。
  * どちらの場合も、後段の「文字列 → 日付・金額・取引先・登録番号」の解析は同じコードを通る。
- * つまり解析ロジック自体はモックでも実物でも同一で、テストの対象にできる。
+ * つまり解析ロジック自体はお試しでも実物でも同一で、テストの対象にできる。
+ *
+ * 合いことばはLINEやカレンダーと同じく、画面から入れてDBに暗号化して置く。
+ * 環境変数だけにすると、入れ替えのたびに再デプロイが要るため。
  */
+import { cache } from "react";
+import { getCredentials } from "./connections";
 
-export function isVisionLive(): boolean {
-  return Boolean(process.env.GOOGLE_VISION_API_KEY);
+export type VisionCredentials = { apiKey: string };
+
+function credentialsFromEnv(): VisionCredentials | null {
+  const apiKey = process.env.GOOGLE_VISION_API_KEY;
+  return apiKey ? { apiKey } : null;
 }
 
-export function ocrMode(): "live" | "mock" {
-  return isVisionLive() ? "live" : "mock";
+export const getVisionCredentials = cache(async function getVisionCredentials(): Promise<VisionCredentials | null> {
+  const { credentials } = await getCredentials<VisionCredentials>("google_vision", credentialsFromEnv);
+  return credentials;
+});
+
+export async function isVisionLive(): Promise<boolean> {
+  const c = await getVisionCredentials();
+  return Boolean(c?.apiKey);
+}
+
+export async function ocrMode(): Promise<"live" | "mock"> {
+  return (await isVisionLive()) ? "live" : "mock";
+}
+
+export function getVisionConnection() {
+  return import("./connections").then((m) =>
+    m.getConnection("google_vision", () => Boolean(process.env.GOOGLE_VISION_API_KEY))
+  );
+}
+
+/**
+ * 合いことばが本物か、その場で確かめる。
+ * 1×1の画像を送って、鍵として通るかどうかだけを見る。
+ */
+export async function testVisionCredentials(
+  apiKey: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  // 1×1の透明なPNG。文字は入っていないので、結果は空で構わない。
+  const TINY_PNG =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
+  try {
+    const res = await fetch(`${VISION_URL}?key=${encodeURIComponent(apiKey)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requests: [{ image: { content: TINY_PNG }, features: [{ type: "TEXT_DETECTION" }] }],
+      }),
+    });
+
+    if (res.ok) return { ok: true };
+
+    const body = await res.text();
+    if (res.status === 400 && body.includes("API key not valid")) {
+      return { ok: false, error: "その合いことばは使えないようです。写し間違いがないかご確認ください。" };
+    }
+    if (res.status === 403) {
+      return {
+        ok: false,
+        error:
+          "この合いことばでは読み取りを呼べませんでした。Google側で「Cloud Vision API」を有効にしたか、鍵の制限を確認してください。",
+      };
+    }
+    return { ok: false, error: `Googleからの返事: ${res.status} ${body.slice(0, 200)}` };
+  } catch (e) {
+    return { ok: false, error: `つながりませんでした: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }
 
 const VISION_URL = "https://vision.googleapis.com/v1/images:annotate";
 
 /** 画像（base64）から文字列を取り出す */
 export async function runOcr(imageBase64: string, sampleKey?: string): Promise<string> {
-  if (!isVisionLive()) return sampleReceiptText(sampleKey);
+  const credentials = await getVisionCredentials();
+  if (!credentials?.apiKey) return sampleReceiptText(sampleKey);
 
-  const res = await fetch(`${VISION_URL}?key=${process.env.GOOGLE_VISION_API_KEY}`, {
+  const res = await fetch(`${VISION_URL}?key=${encodeURIComponent(credentials.apiKey)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
