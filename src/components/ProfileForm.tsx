@@ -16,7 +16,7 @@ type Values = {
 };
 
 const inputCls =
-  "mt-1.5 w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm placeholder:text-slate-400";
+  "mt-1.5 h-[42px] w-full rounded-xl border border-slate-200 bg-surface px-3.5 text-sm leading-5 placeholder:text-slate-400";
 
 /**
  * お客様ご自身が、お名前・ご住所などを登録する欄。

@@ -5,7 +5,10 @@ import { connectLineAction, type ConnectState } from "@/app/connect-actions";
 import { Icon } from "@/components/Icon";
 
 const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 font-mono text-xs placeholder:font-sans placeholder:text-slate-400";
+  "h-[42px] w-full rounded-xl border border-slate-200 bg-surface px-3.5 font-mono text-xs leading-5 placeholder:font-sans placeholder:text-slate-400";
+/** 長いトークンは複数行で見せる。高さは中身に合わせる。 */
+const textCls =
+  "w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 font-mono text-xs leading-5 placeholder:font-sans placeholder:text-slate-400";
 
 /**
  * LINEの合いことばを貼り付ける欄。
@@ -86,7 +89,7 @@ export default function LineConnectForm({
           rows={3}
           required
           placeholder="ここに貼り付けてください"
-          className={inputCls}
+          className={textCls}
         />
         <span className="mt-1 block text-2xs text-slate-500">
           200文字ほどある長い文字列です。前後に空白が入っても、こちらで取り除きます。

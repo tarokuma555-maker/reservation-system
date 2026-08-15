@@ -225,9 +225,19 @@ export function LinkButton({
   );
 }
 
-/** フォーム部品の共通クラス */
+/**
+ * フォーム部品の共通クラス。
+ *
+ * 高さを数字で決め打ちしているのは、日付・時刻の欄だけ中身の作りが違い、
+ * 余白の指定だけだと他より2px背が高くなるため。横に並べたときに
+ * その欄だけ浮いて見えるので、全部そろえている。
+ */
 export const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm placeholder:text-slate-400";
+  "h-[42px] w-full rounded-xl border border-slate-200 bg-surface px-3.5 text-sm leading-5 placeholder:text-slate-400";
+
+/** 複数行の欄。高さは中身に合わせるので、こちらは決め打ちしない。 */
+export const textareaClass =
+  "w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm leading-5 placeholder:text-slate-400";
 
 export function Field({
   label,
@@ -240,11 +250,17 @@ export function Field({
   children: React.ReactNode;
   className?: string;
 }) {
+  /*
+    補足は「入力欄の下」ではなく「見出しの下」に出す。
+    横一列に並べた欄を下ぞろえにしているため、下に置くと
+    その欄だけ入力欄が浮き上がって、列がガタつく。
+    上に置けば、補足があってもなくても入力欄の高さがそろう。
+  */
   return (
-    <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-2xs font-bold tracking-wide text-slate-600">{label}</span>
-      {children}
-      {hint ? <span className="mt-1 block text-2xs text-slate-500">{hint}</span> : null}
+    <label className={`flex flex-col justify-end ${className}`}>
+      <span className="block text-2xs font-bold tracking-wide text-slate-600">{label}</span>
+      {hint ? <span className="mt-0.5 block text-2xs text-slate-500">{hint}</span> : null}
+      <span className="mt-1.5 block">{children}</span>
     </label>
   );
 }

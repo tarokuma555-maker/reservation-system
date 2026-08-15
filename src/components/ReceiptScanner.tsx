@@ -217,7 +217,7 @@ export default function ReceiptScanner({
 }
 
 const inputCls =
-  "block w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm placeholder:text-slate-400";
+  "block h-[42px] w-full rounded-xl border border-slate-200 bg-surface px-3.5 text-sm leading-5 placeholder:text-slate-400";
 
 function Step({ n, title }: { n: number; title: string }) {
   return (

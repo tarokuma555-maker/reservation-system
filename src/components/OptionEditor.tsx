@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { saveOptionAction, deleteOptionAction, type MenuState } from "@/app/admin/menu-actions";
 import { FormResult, SubmitButton } from "@/components/FormFeedback";
+import { Field } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 
 type OptionValues = {
@@ -12,7 +13,8 @@ type OptionValues = {
   additionalPrice: number;
 };
 
-const inputCls = "w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm";
+const inputCls =
+  "h-[42px] w-full rounded-xl border border-slate-200 bg-surface px-3.5 text-sm leading-5";
 
 /** 追加でえらべるもの、1件ぶんの入力欄。そのまま直して保存できる。 */
 export default function OptionEditor({
@@ -30,45 +32,52 @@ export default function OptionEditor({
     <div className="space-y-3">
       <FormResult ok={state.ok ?? delState.ok} error={state.error ?? delState.error} />
 
-      <form action={formAction} className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
+      {/*
+        横一列に並べるときは下ぞろえにする。見出しの長さが違っても
+        入力欄の高さがそろい、段差にならない。
+      */}
+      <form action={formAction} className="flex flex-wrap items-end gap-3">
         {values?.id ? <input type="hidden" name="id" value={values.id} /> : null}
 
-        <label className="block">
-          <span className="text-2xs font-bold text-slate-600">内容</span>
+        <Field label="内容" className="min-w-[200px] flex-1">
           <input
             name="name"
             defaultValue={v.name}
             required
             placeholder="換気扇クリーニング"
-            className={`mt-1 ${inputCls}`}
+            className={inputCls}
           />
-        </label>
+        </Field>
 
-        <label className="block">
-          <span className="text-2xs font-bold text-slate-600">増える時間（分）</span>
-          <input
-            name="additionalMinutes"
-            type="number"
-            min={0}
-            step={5}
-            defaultValue={v.additionalMinutes}
-            className={`mt-1 ${inputCls} !w-32 tabular-nums`}
-          />
-        </label>
+        <Field label="増える時間">
+          <span className="flex items-center gap-2">
+            <input
+              name="additionalMinutes"
+              type="number"
+              min={0}
+              step={5}
+              defaultValue={v.additionalMinutes}
+              className={`${inputCls} !w-24 tabular-nums`}
+            />
+            <span className="text-sm text-slate-500">分</span>
+          </span>
+        </Field>
 
-        <label className="block">
-          <span className="text-2xs font-bold text-slate-600">増える金額（税こみ）</span>
-          <input
-            name="additionalPrice"
-            type="number"
-            min={0}
-            step={100}
-            defaultValue={v.additionalPrice}
-            className={`mt-1 ${inputCls} !w-36 tabular-nums`}
-          />
-        </label>
+        <Field label="増える金額" hint="税こみ">
+          <span className="flex items-center gap-2">
+            <input
+              name="additionalPrice"
+              type="number"
+              min={0}
+              step={100}
+              defaultValue={v.additionalPrice}
+              className={`${inputCls} !w-28 tabular-nums`}
+            />
+            <span className="text-sm text-slate-500">円</span>
+          </span>
+        </Field>
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-center gap-2">
           <SubmitButton size="sm" icon="check" pendingLabel="保存しています…" className="px-5 py-2.5">
             保存
           </SubmitButton>
@@ -76,7 +85,7 @@ export default function OptionEditor({
             <button
               type="button"
               onClick={onDone}
-              className="pb-2 text-xs font-bold text-slate-500 hover:text-slate-700"
+              className="text-xs font-bold text-slate-500 hover:text-slate-700"
             >
               とじる
             </button>

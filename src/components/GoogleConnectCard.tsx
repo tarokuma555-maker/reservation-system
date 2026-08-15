@@ -6,7 +6,7 @@ import { googleRedirectUri } from "@/lib/google-oauth";
 import { disconnectGoogleAction, startGoogleConnectAction } from "@/app/connect-actions";
 
 const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 font-mono text-xs placeholder:font-sans placeholder:text-slate-400";
+  "h-[42px] w-full rounded-xl border border-slate-200 bg-surface px-3.5 font-mono text-xs leading-5 placeholder:font-sans placeholder:text-slate-400";
 
 /**
  * Googleカレンダーとつなぐところ。

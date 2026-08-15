@@ -39,7 +39,10 @@ const EMPTY: MenuValues = {
 };
 
 const inputCls =
-  "mt-1.5 w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm";
+  "mt-1.5 h-[42px] w-full rounded-xl border border-slate-200 bg-surface px-3.5 text-sm leading-5";
+/** ご案内の文だけは複数行。高さを決め打ちすると潰れるので分けている。 */
+const textCls =
+  "mt-1.5 w-full rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm leading-5";
 
 /**
  * メニューを足す・直すための入力欄。
@@ -171,7 +174,7 @@ export default function MenuEditor({
             rows={2}
             defaultValue={v.description}
             placeholder="キッチン・お風呂・トイレを中心に、3時間でととのえます。"
-            className={inputCls}
+            className={textCls}
           />
         </label>
 
