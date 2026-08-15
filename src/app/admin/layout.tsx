@@ -50,14 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen lg:flex">
       <aside className="no-print shrink-0 border-b border-slate-200/80 bg-surface lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="px-5 pb-3 pt-5">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-2xs font-bold text-slate-400 transition hover:text-brand-600"
-          >
-            <Icon name="arrowLeft" className="h-3 w-3" />
-            デモTOP
-          </Link>
-          <p className="mt-2 text-sm font-bold leading-snug tracking-tight text-ink">
+          <p className="text-sm font-bold leading-snug tracking-tight text-ink">
             {settings.issuerName}
           </p>
           <p className="text-2xs text-slate-500">管理画面</p>

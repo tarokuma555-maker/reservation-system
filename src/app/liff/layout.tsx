@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getCurrentCustomer, isLiffLive } from "@/lib/session";
 import { getLineCredentials } from "@/lib/line";
@@ -26,13 +25,7 @@ export default async function LiffLayout({ children }: { children: React.ReactNo
       {live ? null : (
       <div className="border-b border-slate-200/70 bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-[420px] flex-wrap items-center gap-2 px-4 py-2.5">
-          <Link
-            href="/"
-            className="rounded-pill px-2.5 py-1 text-2xs font-bold text-slate-500 transition hover:bg-brand-50 hover:text-brand-700"
-          >
-            ← デモTOP
-          </Link>
-          <span className="text-2xs text-slate-400">操作中のお客様</span>
+          <span className="text-2xs text-slate-400">確認用・操作中のお客様</span>
           <form action={switchCustomer} className="ml-auto flex items-center gap-1.5">
             <select
               name="customerId"

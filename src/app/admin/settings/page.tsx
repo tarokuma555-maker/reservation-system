@@ -2,6 +2,8 @@ import { getSettings } from "@/lib/settings";
 import { updateSettingsAction } from "@/app/actions";
 import { Card, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/Icon";
+import { CONFIRM_PHRASE, demoDataCounts, isDemoData } from "@/lib/reset";
+import StartProductionCard from "@/components/StartProductionCard";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,11 @@ export const dynamic = "force-dynamic";
  * 税務の判断が必要なものは下の方にまとめ、税理士さんと決める項目だと明記する。
  */
 export default async function SettingsPage() {
-  const s = await getSettings();
+  const [s, stillDemo, counts] = await Promise.all([
+    getSettings(),
+    isDemoData(),
+    demoDataCounts(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -26,13 +32,16 @@ export default async function SettingsPage() {
         </p>
       </header>
 
-      <div className="flex gap-3 rounded-card border border-warn-100 bg-warn-50 px-4 py-3">
-        <Icon name="info" className="mt-0.5 h-4 w-4 text-warn-600" />
-        <p className="text-xs leading-relaxed text-warn-700">
-          いまは<b>すべて仮の値</b>が入っています。実際の料金・営業時間・登録番号が決まったら、
-          ここを書き換えてください。
-        </p>
-      </div>
+      {stillDemo ? (
+        <div className="flex gap-3 rounded-card border border-warn-100 bg-warn-50 px-4 py-3">
+          <Icon name="info" className="mt-0.5 h-4 w-4 text-warn-600" />
+          <p className="text-xs leading-relaxed text-warn-700">
+            いまは<b>すべて仮の値</b>が入っています。実際の料金・営業時間・登録番号が決まったら、
+            ここを書き換えてください。
+            架空のお客様やご予約は、<b>このページのいちばん下</b>でまとめて消せます。
+          </p>
+        </div>
+      ) : null}
 
       <form action={updateSettingsAction} className="space-y-6">
         {/* ------------ お店の情報 ------------ */}
@@ -276,6 +285,11 @@ export default async function SettingsPage() {
           「何時間前まで無料にしたいか」をお知らせいただければ、その形に変更します。
         </p>
       </Card>
+
+      {/* ------------ 本番として使いはじめる ------------ */}
+      {stillDemo ? (
+        <StartProductionCard counts={counts} confirmPhrase={CONFIRM_PHRASE} />
+      ) : null}
     </div>
   );
 }

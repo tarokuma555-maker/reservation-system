@@ -12,7 +12,9 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "npm run test:main && npm run test:reset",
+    "test:main": "node --import tsx --test tests/*.test.ts",
+    "test:reset": "tsx scripts/run-reset-test.ts",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "build:richmenu": "tsx scripts/build-richmenu-images.ts"

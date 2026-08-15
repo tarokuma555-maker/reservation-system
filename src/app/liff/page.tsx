@@ -9,7 +9,14 @@ export const dynamic = "force-dynamic";
 
 export default async function LiffHome() {
   const customer = await getCurrentCustomer();
-  if (!customer) return <p className="p-6 text-sm">デモデータがありません。</p>;
+  if (!customer) {
+    return (
+      <p className="p-6 text-sm leading-relaxed text-slate-600">
+        お客様の情報を読み込めませんでした。恐れ入りますが、
+        LINEのメニューからもう一度お開きください。
+      </p>
+    );
+  }
 
   const [next, activeRules, doneCount] = await Promise.all([
     prisma.reservation.findFirst({

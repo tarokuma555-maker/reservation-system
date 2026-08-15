@@ -559,6 +559,13 @@ const SEED_MARKER_KEY = "demo_seeded_on";
  * 実際のご予約を消してしまわないため。作り直したいときは `npm run db:reset` を使う。
  */
 export async function ensureInitialData() {
+  // 本番として使いはじめたあとは、何があっても入れ直さない。
+  // デプロイのたびにデモのお客様が生えてくると、実害が大きいため。
+  const started = await prisma.setting
+    .findUnique({ where: { key: "production_started_on" } })
+    .catch(() => null);
+  if (started) return { seeded: false };
+
   const staffCount = await prisma.staff.count().catch(() => -1);
   if (staffCount !== 0) return { seeded: false };
   await seedDemoData();
