@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { DEMO_CUSTOMER_COOKIE, getOwner } from "@/lib/session";
 import { requireStaff } from "@/lib/auth";
+import { LIFF_IDENTITY_READY } from "@/lib/readiness";
 import { getSettings, resolveCancelPolicy, saveSettings } from "@/lib/settings";
 import { addDays, addMinutes, formatRange, jst, now, toDateStr, todayStr } from "@/lib/time";
 import { layoutAdjustment } from "@/lib/availability";
@@ -554,6 +555,15 @@ export async function simulatePersonalEventAction(formData: FormData) {
 
 export async function publishRichMenuAction(formData: FormData) {
   await requireStaff();
+
+  // 画面のボタンは塞いであるが、サーバー側でも止める。
+  // お客様側の画面が「どなたが開いているか」を見分けられないうちに公開すると、
+  // 他のお客様の氏名・住所が見えてしまうため。
+  if (!LIFF_IDENTITY_READY) {
+    throw new Error(
+      "お客様側の本人確認がまだ実装されていないため、メニューを公開できません。"
+    );
+  }
   const id = String(formData.get("richMenuId"));
   const menu = await prisma.richMenu.findUniqueOrThrow({ where: { id } });
   const areas = JSON.parse(menu.areas) as { label: string; icon: string; path: string }[];

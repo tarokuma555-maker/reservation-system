@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getLineConnection, getLineCredentials } from "@/lib/line";
 import { isEncryptionReady } from "@/lib/crypto";
+import { LIFF_IDENTITY_READY } from "@/lib/readiness";
 import { Button, Card, SectionTitle } from "@/components/ui";
 import { Icon, type IconName } from "@/components/Icon";
 import { SetupProgress, SetupStep, Howto } from "@/components/SetupStep";
@@ -46,7 +47,7 @@ export default async function LineSetupPage() {
         steps={[
           { label: "つなぐ", done: connected },
           { label: "受け口を伝える", done: connected },
-          { label: "メニューを出す", done: menuPublished },
+          ...(LIFF_IDENTITY_READY ? [{ label: "メニューを出す", done: menuPublished }] : []),
         ]}
       />
 
@@ -241,7 +242,7 @@ export default async function LineSetupPage() {
                     type="submit"
                     variant={rm.isPublished ? "secondary" : "primary"}
                     className="w-full"
-                    disabled={!connected}
+                    disabled={!connected || !LIFF_IDENTITY_READY}
                   >
                     <Icon name="send" className="h-4 w-4" />
                     {rm.isPublished ? "もう一度出しなおす" : "このメニューを出す"}
@@ -252,7 +253,20 @@ export default async function LineSetupPage() {
           })}
         </div>
 
-        {!connected ? (
+        {!LIFF_IDENTITY_READY ? (
+          <div className="mt-3 flex gap-3 rounded-card border border-warn-100 bg-warn-50 px-4 py-3.5">
+            <Icon name="alert" className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" />
+            <div className="text-xs leading-relaxed text-warn-700">
+              <p className="font-bold">いまはまだ公開できません（こちらの作業が残っています）</p>
+              <p className="mt-1">
+                お客様側の画面が、まだ「どなたが開いているか」を見分けられません。
+                このまま公開すると、<b>お客様が別のお客様のお名前やご住所を見られてしまいます</b>。
+                その仕組みを作り終えるまで、ボタンを押せないようにしています。
+                おしらせの送信は、公開しなくても動きます。
+              </p>
+            </div>
+          </div>
+        ) : !connected ? (
           <p className="mt-3 flex items-start gap-1.5 text-2xs leading-relaxed text-slate-500">
             <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
             先に手順1でLINEとつないでください。つながると押せるようになります。
