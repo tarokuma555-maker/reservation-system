@@ -36,6 +36,7 @@ const NAV: { group: string; items: { href: string; label: string; icon: IconName
     group: "設定",
     items: [
       { href: "/admin/settings", label: "お店の設定", icon: "settings" },
+      { href: "/admin/hours", label: "営業時間とお休み", icon: "clock" },
       { href: "/admin/messages", label: "LINEの設定", icon: "chat" },
       { href: "/admin/calendar-sync", label: "カレンダー連携", icon: "link" },
     ],
