@@ -60,22 +60,56 @@ export async function testVisionCredentials(
     });
 
     if (res.ok) return { ok: true };
-
-    const body = await res.text();
-    if (res.status === 400 && body.includes("API key not valid")) {
-      return { ok: false, error: "その合いことばは使えないようです。写し間違いがないかご確認ください。" };
-    }
-    if (res.status === 403) {
-      return {
-        ok: false,
-        error:
-          "この合いことばでは読み取りを呼べませんでした。Google側で「Cloud Vision API」を有効にしたか、鍵の制限を確認してください。",
-      };
-    }
-    return { ok: false, error: `Googleからの返事: ${res.status} ${body.slice(0, 200)}` };
+    return { ok: false, error: explainVisionError(res.status, await res.text()) };
   } catch (e) {
     return { ok: false, error: `つながりませんでした: ${e instanceof Error ? e.message : String(e)}` };
   }
+}
+
+/**
+ * Googleからの断り文句を、何をすればよいかが分かる日本語にする。
+ *
+ * 403は「APIが有効でない」「お支払いの設定がまだ」「鍵の制限で弾かれた」など
+ * まったく別の原因が同じ番号で返る。まとめて「確認してください」と出すと、
+ * どこを見ればよいのか分からない。Googleが返す reason で見分ける。
+ */
+export function explainVisionError(status: number, body: string): string {
+  let reason = "";
+  let message = "";
+  try {
+    const json = JSON.parse(body) as {
+      error?: { message?: string; details?: { reason?: string }[] };
+    };
+    message = json.error?.message ?? "";
+    reason = json.error?.details?.find((d) => d.reason)?.reason ?? "";
+  } catch {
+    message = body;
+  }
+
+  // Googleの文面に、その場で開けるURLが入っていることが多い。そのまま添える。
+  const url = message.match(/https:\/\/console\.[^\s]+?(?=\s|$)/)?.[0]?.replace(/[.,]$/, "");
+  const link = url ? `\n${url}` : "";
+
+  if (reason === "API_KEY_INVALID" || message.includes("API key not valid")) {
+    return "その合いことばは使えないようです。写し間違いがないか、ご確認ください。";
+  }
+  if (reason === "SERVICE_DISABLED") {
+    return `Google側で「Cloud Vision API」がまだ有効になっていません。下のページを開いて「有効にする」を押してから、もう一度おためしください。${link}`;
+  }
+  if (reason === "BILLING_DISABLED") {
+    return `このプロジェクトで、お支払いの設定がまだ済んでいません。読み取りは月1,000枚まで無料ですが、Googleの決まりでお支払い方法の登録が要ります。下のページから設定してください。${link}`;
+  }
+  if (reason === "API_KEY_SERVICE_BLOCKED") {
+    return "この合いことばは、レシートの読み取りに使えない設定になっています。Googleの「認証情報」でこの鍵を開き、「APIの制限」に Cloud Vision API が入っているかご確認ください。";
+  }
+  if (reason === "API_KEY_HTTP_REFERRER_BLOCKED" || reason === "API_KEY_IP_ADDRESS_BLOCKED") {
+    return "この合いことばは、使える場所が限定されています。Googleの「認証情報」でこの鍵を開き、「アプリケーションの制限」を「なし」にしてください（読み取りを呼ぶのはブラウザではなくサーバーのため）。";
+  }
+  if (status === 429 || reason === "RATE_LIMIT_EXCEEDED") {
+    return "いま混み合っているようです。少し時間をおいて、もう一度おためしください。";
+  }
+
+  return `Googleからの返事: ${message ? message.slice(0, 300) : `${status} ${body.slice(0, 200)}`}`;
 }
 
 const VISION_URL = "https://vision.googleapis.com/v1/images:annotate";
