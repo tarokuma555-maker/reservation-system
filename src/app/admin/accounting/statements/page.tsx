@@ -2,7 +2,12 @@ import Link from "next/link";
 import { buildFinancialStatements, ensureFiscalYear } from "@/lib/accounting";
 import { Card, LinkButton, ProvisionalNote, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/Icon";
-import { formatYen } from "@/lib/time";
+import {
+  BalanceSheetTable,
+  EquityStatementTable,
+  NotesBlock,
+  ProfitAndLossTable,
+} from "@/components/StatementsTables";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +32,16 @@ export default async function StatementsPage() {
             {fs.fiscalYear.startDate} 〜 {fs.fiscalYear.endDate} のぶんです。
           </p>
         </div>
-        <LinkButton href="/admin/accounting/tax" className="no-print">
-          <Icon name="chart" className="h-4 w-4" />
-          消費税のまとめを見る
-        </LinkButton>
+        <div className="no-print flex flex-wrap gap-2">
+          <LinkButton href="/print/statements" target="_blank" rel="noreferrer noopener">
+            <Icon name="receipt" className="h-4 w-4" />
+            PDFで保存する
+          </LinkButton>
+          <LinkButton href="/admin/accounting/tax" variant="secondary">
+            <Icon name="chart" className="h-4 w-4" />
+            消費税のまとめを見る
+          </LinkButton>
+        </div>
       </header>
 
       <div className="flex gap-3 rounded-card border border-brand-200 bg-brand-50/60 px-4 py-3.5">
@@ -49,64 +60,7 @@ export default async function StatementsPage() {
         <section>
           <SectionTitle hint="1年でいくら稼いで、いくら残ったか">損益計算書（P/L）</SectionTitle>
           <Card className="p-0">
-            <table className="w-full text-sm">
-              <tbody className="divide-y divide-slate-100">
-                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
-                  <td className="px-4 py-2" colSpan={2}>
-                    売上高
-                  </td>
-                </tr>
-                {fs.profitAndLoss.revenues.map((r) => (
-                  <tr key={r.code}>
-                    <td className="px-4 py-1.5 pl-8">{r.name}</td>
-                    <td className="px-4 py-1.5 text-right tabular-nums">{formatYen(r.amount)}</td>
-                  </tr>
-                ))}
-                <tr className="font-medium">
-                  <td className="px-4 py-1.5">売上高 計</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatYen(fs.profitAndLoss.totalRevenue)}
-                  </td>
-                </tr>
-
-                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
-                  <td className="px-4 py-2" colSpan={2}>
-                    販売費及び一般管理費
-                  </td>
-                </tr>
-                {fs.profitAndLoss.expenses.map((r) => (
-                  <tr key={r.code}>
-                    <td className="px-4 py-1.5 pl-8">{r.name}</td>
-                    <td className="px-4 py-1.5 text-right tabular-nums">{formatYen(r.amount)}</td>
-                  </tr>
-                ))}
-                <tr className="font-medium">
-                  <td className="px-4 py-1.5">費用 計</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatYen(fs.profitAndLoss.totalExpense)}
-                  </td>
-                </tr>
-
-                <tr className="border-t border-slate-300 font-bold">
-                  <td className="px-4 py-2">経常利益</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {formatYen(fs.profitAndLoss.ordinaryIncome)}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-1.5">法人税等</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatYen(fs.profitAndLoss.corporateTax)}
-                  </td>
-                </tr>
-                <tr className="border-t border-slate-300 bg-brand-50 font-bold">
-                  <td className="px-4 py-2">当期純利益</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {formatYen(fs.profitAndLoss.netIncome)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <ProfitAndLossTable pl={fs.profitAndLoss} />
           </Card>
         </section>
 
@@ -121,124 +75,21 @@ export default async function StatementsPage() {
             貸借対照表（B/S）
           </SectionTitle>
           <Card className="p-0">
-            <table className="w-full text-sm">
-              <tbody className="divide-y divide-slate-100">
-                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
-                  <td className="px-4 py-2" colSpan={2}>
-                    資産の部
-                  </td>
-                </tr>
-                {fs.balanceSheet.assets.map((r) => (
-                  <tr key={r.code}>
-                    <td className="px-4 py-1.5 pl-8">{r.name}</td>
-                    <td className="px-4 py-1.5 text-right tabular-nums">{formatYen(r.amount)}</td>
-                  </tr>
-                ))}
-                <tr className="font-medium">
-                  <td className="px-4 py-1.5">資産合計</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatYen(fs.balanceSheet.totalAssets)}
-                  </td>
-                </tr>
-
-                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
-                  <td className="px-4 py-2" colSpan={2}>
-                    負債の部
-                  </td>
-                </tr>
-                {fs.balanceSheet.liabilities.map((r) => (
-                  <tr key={r.code}>
-                    <td className="px-4 py-1.5 pl-8">{r.name}</td>
-                    <td className="px-4 py-1.5 text-right tabular-nums">{formatYen(r.amount)}</td>
-                  </tr>
-                ))}
-                <tr className="font-medium">
-                  <td className="px-4 py-1.5">負債合計</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatYen(fs.balanceSheet.totalLiabilities)}
-                  </td>
-                </tr>
-
-                <tr className="bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
-                  <td className="px-4 py-2" colSpan={2}>
-                    純資産の部
-                  </td>
-                </tr>
-                {fs.balanceSheet.equity.map((r) => (
-                  <tr key={r.code}>
-                    <td className="px-4 py-1.5 pl-8">{r.name}</td>
-                    <td className="px-4 py-1.5 text-right tabular-nums">{formatYen(r.amount)}</td>
-                  </tr>
-                ))}
-                <tr className="font-medium">
-                  <td className="px-4 py-1.5">純資産合計</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">
-                    {formatYen(fs.balanceSheet.totalEquity)}
-                  </td>
-                </tr>
-
-                <tr className="border-t border-slate-300 bg-brand-50 font-bold">
-                  <td className="px-4 py-2">負債・純資産合計</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {formatYen(fs.balanceSheet.totalLiabilities + fs.balanceSheet.totalEquity)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <BalanceSheetTable bs={fs.balanceSheet} />
           </Card>
         </section>
 
         <section>
           <SectionTitle hint="会社の元手が1年でどう増えたか">株主資本等変動計算書</SectionTitle>
           <Card className="p-0">
-            <table className="w-full text-sm">
-              <thead className="border-b border-slate-200 bg-brand-50/60 text-2xs font-bold tracking-wide text-slate-600">
-                <tr>
-                  <th className="px-4 py-2.5 text-left">項目</th>
-                  <th className="px-4 py-2.5 text-right">当期首残高</th>
-                  <th className="px-4 py-2.5 text-right">当期変動額</th>
-                  <th className="px-4 py-2.5 text-right">当期末残高</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {fs.equityStatement.rows.map((r) => (
-                  <tr key={r.name}>
-                    <td className="px-4 py-2">{r.name}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{formatYen(r.opening)}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{formatYen(r.change)}</td>
-                    <td className="px-4 py-2.5 text-right font-medium tabular-nums">
-                      {formatYen(r.closing)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <EquityStatementTable eq={fs.equityStatement} />
           </Card>
         </section>
 
         <section>
           <SectionTitle hint="数字の数え方についての断り書き">個別注記表</SectionTitle>
-          <Card className="space-y-3 text-sm leading-relaxed text-slate-700">
-            <div>
-              <p className="font-bold">1. 重要な会計方針</p>
-              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs">
-                <li>高額な道具の目減りの数え方: 毎年おなじ額ずつ（買った年は月割り）</li>
-                <li>売上を数えるタイミング: お仕事が終わった日（お金をいただいた日ではありません）</li>
-                <li>消費税の扱い: 売上と消費税を分けて記録しています</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-bold">2. 貸借対照表に関する注記</p>
-              <p className="mt-1 text-xs">
-                道具の目減りぶんは、道具の値段から直接引かず、別の行として書いています。
-              </p>
-            </div>
-            <div>
-              <p className="font-bold">3. 損益計算書に関する注記</p>
-              <p className="mt-1 text-xs">
-                売上は、おうかがいする形とオンライン、そしてメニューの種類ごとに分けて記録しています。
-              </p>
-            </div>
+          <Card className="space-y-3">
+            <NotesBlock />
             <p className="text-2xs text-slate-500">
               よくある書き方をあらかじめ入れてあります。変わったところだけ直していく形になります。
             </p>

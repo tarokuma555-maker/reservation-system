@@ -124,4 +124,19 @@ summary:focus-visible {
   body {
     background: #fff;
   }
+  /* 表の途中で紙が変わると読めなくなるので、区切りのよいところで送る */
+  .print-break-before {
+    break-before: page;
+  }
+  table {
+    break-inside: auto;
+  }
+  tr {
+    break-inside: avoid;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 14mm;
 }

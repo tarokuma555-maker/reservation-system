@@ -30,6 +30,7 @@ const NAV: { group: string; items: { href: string; label: string; icon: IconName
       { href: "/admin/expenses", label: "経費を入れる", icon: "camera" },
       { href: "/admin/documents", label: "レシートの保管", icon: "folder" },
       { href: "/admin/accounting", label: "売上と経費のまとめ", icon: "chart" },
+      { href: "/admin/invoice-registration", label: "インボイスの登録", icon: "check" },
     ],
   },
   {
