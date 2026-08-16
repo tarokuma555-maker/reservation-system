@@ -391,34 +391,14 @@ export async function seedDemoData() {
   const g2 = await generateOccurrences(rule2.id);
 
   /* ---------- リッチメニュー ---------- */
+  // 中身は src/lib/richmenu-presets.ts が正。ここは入れ物だけ作る。
+  const { DEFAULT_PRESET } = await import("./richmenu-presets");
   await prisma.richMenu.create({
     data: {
-      name: "はじめての方向け",
-      target: "default",
-      chatBarText: "メニュー",
-      areas: JSON.stringify([
-        { label: "はじめての方へ", icon: "sparkle", path: "" },
-        { label: "料金・メニュー", icon: "list", path: "/menus" },
-        { label: "予約する", icon: "calendar", path: "/menus" },
-        { label: "定期利用", icon: "repeat", path: "/recurring/new" },
-        { label: "よくある質問", icon: "help", path: "" },
-        { label: "お問い合わせ", icon: "chat", path: "" },
-      ]),
-    },
-  });
-  await prisma.richMenu.create({
-    data: {
-      name: "ご予約がある方向け",
-      target: "booked",
-      chatBarText: "予約メニュー",
-      areas: JSON.stringify([
-        { label: "次回の予約", icon: "calendarCheck", path: "/reservations" },
-        { label: "予約を変更", icon: "edit", path: "/reservations" },
-        { label: "キャンセル", icon: "close", path: "/reservations" },
-        { label: "定期利用の管理", icon: "repeat", path: "/recurring" },
-        { label: "新しく予約", icon: "calendar", path: "/menus" },
-        { label: "領収書", icon: "receipt", path: "/invoices" },
-      ]),
+      name: DEFAULT_PRESET.name,
+      target: DEFAULT_PRESET.target,
+      chatBarText: DEFAULT_PRESET.chatBarText,
+      areas: JSON.stringify(DEFAULT_PRESET.areas),
     },
   });
 

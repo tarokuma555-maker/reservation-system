@@ -37,9 +37,9 @@ import {
   buildRichMenuPayload,
   deleteRichMenu,
   getLineCredentials,
-  linkRichMenuToUser,
   registerRichMenu,
   setDefaultRichMenu,
+  unlinkRichMenuFromUsers,
 } from "@/lib/line";
 import { generateInvoicePdf } from "@/lib/pdf";
 import { parseReceipt, runOcr, suggestAccountCode, isSmallAmountException } from "@/lib/ocr";
@@ -651,40 +651,31 @@ export async function publishRichMenuAction(
   });
 
   // 背景画像はあらかじめ作って同梱してある（scripts/build-richmenu-images.ts）
-  const imagePath = path.join(
-    process.cwd(),
-    "public",
-    "richmenu",
-    menu.target === "booked" ? "booked.png" : "default.png"
-  );
+  const imagePath = path.join(process.cwd(), "public", "richmenu", `${preset.target}.png`);
 
   const previousLineId = menu.lineRichMenuId;
   const { richMenuId } = await registerRichMenu(payload, imagePath);
 
-  if (menu.target === "default") {
-    // はじめての方向けは、全員に出る既定のメニューにする
-    await setDefaultRichMenu(richMenuId);
-  } else {
-    // ご予約がある方向けは、その方にだけ結びつける
-    const withUpcoming = await prisma.customer.findMany({
-      where: { reservations: { some: { status: "confirmed", startAt: { gte: now() } } } },
-      select: { lineUserId: true },
-    });
-    for (const c of withUpcoming) await linkRichMenuToUser(c.lineUserId, richMenuId);
+  // 全員に同じメニューを出す
+  await setDefaultRichMenu(richMenuId);
+
+  // 以前は「ご予約がある方向け」をお客様ごとに貼っていた。
+  // 個別のメニューは既定より優先されるため、外さないかぎり
+  // その方だけ古いメニューを見続けることになる。
+  const customers = await prisma.customer.findMany({ select: { lineUserId: true } });
+  if (customers.length > 0) {
+    await unlinkRichMenuFromUsers(customers.map((c) => c.lineUserId)).catch(() => {});
   }
 
-  await prisma.richMenu.updateMany({ where: { target: menu.target }, data: { isPublished: false } });
-  await prisma.richMenu.update({
-    where: { id },
-    data: {
-      isPublished: true,
-      lineRichMenuId: richMenuId,
-      // 実際に出したものを残しておく（画面で見比べられるように）
-      name: preset.name,
-      chatBarText: preset.chatBarText,
-      areas: JSON.stringify(areas),
-    },
-  });
+  // 分けていた頃の残りを、LINE側と記録の両方から片づける。
+  // いま出したものは対象から外す（消してしまうと直後の記録更新が失敗する）。
+  const obsolete = await prisma.richMenu.findMany({ where: { id: { not: menu.id } } });
+  for (const old of obsolete) {
+    if (old.lineRichMenuId) await deleteRichMenu(old.lineRichMenuId).catch(() => {});
+  }
+  if (obsolete.length > 0) {
+    await prisma.richMenu.deleteMany({ where: { id: { in: obsolete.map((o) => o.id) } } });
+  }
 
   // 古いメニューはLINE側から片づける（残しても使われず、上限を圧迫するため）
   if (previousLineId && previousLineId !== richMenuId) {

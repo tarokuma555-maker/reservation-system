@@ -47,7 +47,7 @@ type Area = { label: string; icon: string };
  * ラベルは必ず src/lib/richmenu-presets.ts と同じものを使う。
  */
 const MENUS: { file: string; areas: Area[] }[] = RICH_MENU_PRESETS.map((preset) => ({
-  file: preset.target === "booked" ? "booked.png" : "default.png",
+  file: `${preset.target}.png`,
   areas: preset.areas.map((a) => ({ label: a.label, icon: a.icon })),
 }));
 

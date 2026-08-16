@@ -7,11 +7,17 @@ import type { RichMenuArea } from "./line";
  * DBにも同じものを持っていたが、あとから中身を直しても、すでに保存された
  * 古い内容が使われ続けてしまう（行き先の無いボタンが残っていた）。
  *
+ * メニューは**1種類だけ**にしている。
+ * 以前は「はじめての方向け」と「ご予約がある方向け」に分けていたが、
+ * 予約が入った・終わった・取り消したときに貼り替える処理が無く、
+ * 公開した瞬間の状態のまま貼りついたままになっていた。
+ * 中身の差も1つ目のボタンの名前だけだったので、分ける値打ちがない。
+ *
  * 背景画像に文字を焼きこんでいるため、**ラベルを変えたら画像も作り直すこと**。
  *   npm run build:richmenu
  */
 
-export type RichMenuTarget = "default" | "booked";
+export type RichMenuTarget = "default";
 
 export type RichMenuPreset = {
   target: RichMenuTarget;
@@ -29,7 +35,7 @@ export type RichMenuPreset = {
 export const RICH_MENU_PRESETS: RichMenuPreset[] = [
   {
     target: "default",
-    name: "はじめての方向け",
+    name: "お客様用メニュー",
     chatBarText: "メニュー",
     areas: [
       { label: "予約する", icon: "calendar", path: "/menus" },
@@ -40,24 +46,10 @@ export const RICH_MENU_PRESETS: RichMenuPreset[] = [
       { label: "お問い合わせ", icon: "chat", path: "/talk" },
     ],
   },
-  {
-    target: "booked",
-    name: "ご予約がある方向け",
-    chatBarText: "予約メニュー",
-    areas: [
-      { label: "次回の予約", icon: "calendarCheck", path: "/reservations" },
-      { label: "新しく予約", icon: "calendar", path: "/menus" },
-      { label: "定期のご利用", icon: "repeat", path: "/recurring" },
-      { label: "ご登録内容", icon: "user", path: "/profile" },
-      { label: "領収書", icon: "receipt", path: "/invoices" },
-      { label: "お問い合わせ", icon: "chat", path: "/talk" },
-    ],
-  },
 ];
 
-export function presetFor(target: string): RichMenuPreset {
-  return (
-    RICH_MENU_PRESETS.find((p) => p.target === target) ??
-    RICH_MENU_PRESETS[0]
-  );
+export const DEFAULT_PRESET = RICH_MENU_PRESETS[0];
+
+export function presetFor(_target: string): RichMenuPreset {
+  return DEFAULT_PRESET;
 }

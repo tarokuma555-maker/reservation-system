@@ -31,7 +31,9 @@ export default async function LineSetupPage() {
   const [line, credentials, richMenus] = await Promise.all([
     getLineConnection(),
     getLineCredentials(),
-    prisma.richMenu.findMany({ orderBy: { target: "desc" } }),
+    // 2種類に分けるのはやめたので、代表の1件だけを扱う。
+    // 分けていた頃の残りは、出しなおしたときに片づける。
+    prisma.richMenu.findMany({ orderBy: { target: "asc" } }),
   ]);
 
   const baseUrl = (process.env.APP_BASE_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
@@ -242,7 +244,7 @@ export default async function LineSetupPage() {
         done={menuPublished}
       >
         <div className="grid gap-4 lg:grid-cols-2">
-          {richMenus.map((rm) => {
+          {richMenus.slice(0, 1).map((rm) => {
             // 出す中身はコード側の定義。DBに残る古い内容を見せると、
             // 画面と実際に出るものが食い違う。
             const preset = presetFor(rm.target);
@@ -256,11 +258,7 @@ export default async function LineSetupPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-ink">
-                      {rm.target === "default"
-                        ? "はじめての方に出すメニュー"
-                        : "ご予約がある方に出すメニュー"}
-                    </p>
+                    <p className="text-sm font-bold text-ink">お客様に出すメニュー</p>
                     <p className="mt-0.5 text-2xs text-slate-500">
                       入力欄の上に「{preset.chatBarText}」と表示されます
                     </p>

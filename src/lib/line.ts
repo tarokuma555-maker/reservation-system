@@ -392,6 +392,26 @@ export async function deleteRichMenu(richMenuId: string) {
   await callLineApi(`/richmenu/${richMenuId}`, null, "DELETE");
 }
 
+/**
+ * 個別に貼ったメニューを外す。
+ *
+ * 個別のメニューは既定のメニューより優先されるため、外さないかぎり
+ * そのお客様だけ古いメニューを見続けることになる。
+ * LINEは一度に500人までまとめて外せる。
+ */
+export async function unlinkRichMenuFromUsers(lineUserIds: string[]) {
+  if (!(await isLineLive())) return { mocked: true, unlinked: 0 };
+
+  let unlinked = 0;
+  for (let i = 0; i < lineUserIds.length; i += 500) {
+    const chunk = lineUserIds.slice(i, i + 500);
+    // すでに何も貼られていない方が混ざっていても、まとめて外す分には支障がない
+    await callLineApi("/richmenu/bulk/unlink", { userIds: chunk }, "POST");
+    unlinked += chunk.length;
+  }
+  return { mocked: false, unlinked };
+}
+
 /** すべての方に出す既定のメニューにする */
 export async function setDefaultRichMenu(richMenuId: string) {
   if (!(await isLineLive())) return { mocked: true };
