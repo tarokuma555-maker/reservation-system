@@ -3,6 +3,8 @@ import { Button, Card, Empty, Field, SectionTitle, inputClass } from "@/componen
 import { Icon } from "@/components/Icon";
 import { formatYen, todayStr } from "@/lib/time";
 import { deleteDocumentAction } from "@/app/actions";
+import { findInvoicesWithoutArchive } from "@/lib/document-archive";
+import ArchiveBackfill from "@/components/ArchiveBackfill";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +56,7 @@ export default async function DocumentsPage({
   });
 
   const today = todayStr();
+  const missingArchives = await findInvoicesWithoutArchive();
 
   return (
     <div className="space-y-8">
@@ -64,6 +67,8 @@ export default async function DocumentsPage({
           紙で箱にためておく代わりに、ここに入れておけば「いつ・いくら・どこの」で探せます。
         </p>
       </header>
+
+      <ArchiveBackfill missing={missingArchives.length} />
 
       <section>
         <SectionTitle hint="どれか1つだけでも探せます。空けたところは指定なしになります">
@@ -146,10 +151,26 @@ export default async function DocumentsPage({
                         <p className="mt-0.5 text-xs text-slate-500">
                           {KIND_LABEL[d.kind] ?? d.kind} ／ {d.transactionDate} のお取引
                         </p>
+                        {d.content ? (
+                          <a
+                            href={`/admin/documents/${d.id}/view`}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="mt-1.5 inline-flex items-center gap-1 rounded-pill border border-slate-200 bg-surface px-3 py-1 text-2xs font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700"
+                          >
+                            <Icon name="receipt" className="h-3.5 w-3.5" />
+                            控えを開く
+                          </a>
+                        ) : (
+                          <p className="mt-1 inline-flex items-center gap-1 text-2xs text-warn-700">
+                            <Icon name="alert" className="h-3 w-3" />
+                            中身が保存されていません（古い記録）
+                          </p>
+                        )}
                         {d.fileHash ? (
                           <p className="mt-1 inline-flex items-center gap-1 text-2xs text-slate-400">
                             <Icon name="check" className="h-3 w-3" />
-                            中身が書きかえられていないか、いつでも確かめられます
+                            開くたびに、書きかえられていないかを確かめます
                           </p>
                         ) : null}
                       </div>

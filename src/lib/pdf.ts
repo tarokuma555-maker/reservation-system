@@ -1,9 +1,7 @@
-import { createHash } from "node:crypto";
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { prisma } from "./db";
 import { resolveChromiumPath } from "./browser";
-import { addDays } from "./time";
 
 /**
  * 請求書PDFの生成。
@@ -11,8 +9,10 @@ import { addDays } from "./time";
  * 印刷用HTML（/print/invoice/[id]）をヘッドレスChromiumで開いてPDF化する。
  * 日本語フォントの埋め込みをライブラリ側で用意しなくてよく、画面と紙の見た目が必ず一致する。
  *
- * 生成したPDFは storage/invoices/ に保存し、Document（証憑）として登録する。
- * 証憑には電子帳簿保存法の検索要件3項目（取引年月日・取引金額・取引先）を必ず入れる。
+ * ここで作るのは「お客様にお渡しするためのPDF」。
+ * 法律で7年残す必要のある**控え**は、発行した時点で別に保存している
+ * （src/lib/document-archive.ts）。この置き場所ではPDFを作れないことがあるため、
+ * 控えの保存をPDF生成に頼らせない。
  */
 
 // 書き込み可能な場所に置く。サーバーレスでは /tmp しか書けない。
@@ -57,29 +57,9 @@ export async function generateInvoicePdf(invoiceId: string): Promise<{ filePath:
     await browser.close();
   }
 
-  const hash = createHash("sha256").update(readFileSync(filePath)).digest("hex");
-
-  // 交付した書類の写しを証憑として保存する（保存期間は7年）
-  const retentionUntil = addDays(invoice.issueDate, 365 * 7);
-  const document = await prisma.document.create({
-    data: {
-      kind: "issued_invoice",
-      filePath,
-      mimeType: "application/pdf",
-      fileHash: hash,
-      transactionDate: invoice.lines[0]?.transactionDate ?? invoice.issueDate,
-      transactionAmount: invoice.totalAmount,
-      counterpartyName: invoice.recipientName,
-      retentionUntil,
-    },
-  });
-  await prisma.documentLog.create({
-    data: {
-      documentId: document.id,
-      action: "create",
-      detail: `${invoice.invoiceNumber} のPDFを生成し、写しとして保存`,
-    },
-  });
+  // 控えの保存はここでは行わない。
+  // 発行した時点で archiveIssuedInvoice が残している。
+  // ここで作ると、PDFを開くたびに控えが増えてしまう。
 
   await prisma.invoice.update({ where: { id: invoiceId }, data: { pdfPath: filePath } });
 

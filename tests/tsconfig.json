@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // 本番のビルドはNext（SWC）がJSXを変換するが、
+    // 確かめは tsx が直接読む。tsx にも変換のしかたを教えておかないと、
+    // 領収書の見た目を組み立てるところで止まってしまう。
+    "jsx": "react-jsx"
+  },
+  "include": ["../src/**/*.ts", "../src/**/*.tsx", "./**/*.ts"]
+}

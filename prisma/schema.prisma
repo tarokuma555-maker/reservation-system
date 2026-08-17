@@ -364,7 +364,13 @@ model CalendarSync {
 model Document {
   id                String   @id @default(cuid())
   kind              String // issued_invoice | received_receipt | received_invoice
-  filePath          String
+  /// ファイルとして持つ場合の置き場所。中身をDBに持つ場合は空。
+  filePath          String?
+  /// 交付した書類の控えそのもの。作った時点の中身を、そのまま動かさずに残す。
+  /// サーバーレスではファイルが消えるため、控えはここに置く。
+  content           String?
+  /// どの書類の控えか。二重に作らないための目印でもある。
+  invoiceId         String?  @unique
   mimeType          String   @default("application/pdf")
   fileHash          String   @default("")
   transactionDate   String // 検索要件①

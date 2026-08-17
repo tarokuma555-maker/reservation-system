@@ -15,6 +15,7 @@ import { addDays, addMinutes, formatRange, jst, now, toDateStr, todayStr } from 
 import { layoutAdjustment } from "@/lib/availability";
 import { applyRuleChange, endRule, generateOccurrences, pauseRule, resumeRule } from "@/lib/recurring";
 import { issueInvoice, issueReturnedInvoice, voidInvoice, InvoiceValidationError } from "@/lib/invoice";
+import { archiveIssuedInvoice } from "@/lib/document-archive";
 import {
   notifyBookingConfirmed,
   notifyCancelled,
@@ -495,8 +496,13 @@ export async function issueInvoiceAction(
     const invoice = await issueInvoice({ customerId, reservationIds, type });
     await ensureChartOfAccounts();
     await journalizeInvoice(invoice.id);
+
+    // 交付した書類の控えを、この時点で必ず残す（7年保存）。
+    // PDFを作れる環境かどうかに関係なく残す必要がある。
+    await archiveIssuedInvoice(invoice.id);
+
     refresh();
-    return { ok: `${invoice.invoiceNumber} を発行し、売上の仕訳を起こしました` };
+    return { ok: `${invoice.invoiceNumber} を発行しました。売上の仕訳と、控えの保存もすみました。` };
   } catch (e) {
     if (e instanceof InvoiceValidationError) {
       return {
@@ -540,6 +546,7 @@ export async function issueReturnedInvoiceAction(formData: FormData) {
   );
   await ensureChartOfAccounts();
   await journalizeInvoice(invoice.id);
+  await archiveIssuedInvoice(invoice.id);
   refresh();
 }
 

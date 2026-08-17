@@ -16,6 +16,16 @@ const PRODUCTION_MARKER = "production_started_on";
 
 async function seedMinimal() {
   await prisma.setting.deleteMany({ where: { key: { in: [DEMO_MARKER, PRODUCTION_MARKER] } } });
+  // お客様にぶら下がるものを、関係の深い順に片づけてからにする。
+  // 領収書の控えが残るようになったぶん、ここも先に消さないとお客様を消せない。
+  await prisma.documentLog.deleteMany();
+  await prisma.expense.deleteMany();
+  await prisma.document.deleteMany();
+  await prisma.journalLine.deleteMany();
+  await prisma.journalEntry.deleteMany();
+  await prisma.invoiceLine.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.reservationLog.deleteMany();
   await prisma.reservationOption.deleteMany();
   await prisma.reservation.deleteMany();
   await prisma.customer.deleteMany();

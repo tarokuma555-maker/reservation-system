@@ -54,7 +54,13 @@ function main() {
   psql("postgres", `DROP DATABASE IF EXISTS ${TEST_DB}`);
   psql("postgres", `CREATE DATABASE ${TEST_DB}`);
 
-  const env = { ...process.env, DATABASE_URL: url.toString(), DIRECT_URL: url.toString() };
+  const env = {
+    ...process.env,
+    DATABASE_URL: url.toString(),
+    DIRECT_URL: url.toString(),
+    // 領収書の見た目を組み立てるところを通るので、JSXの変換のしかたを tsx に伝える
+    TSX_TSCONFIG_PATH: "tests/tsconfig.json",
+  };
 
   execFileSync("npx", ["prisma", "migrate", "deploy"], { stdio: "inherit", env });
   // 全件削除を伴う確かめなので、**1本ずつ**走らせる。
@@ -68,6 +74,7 @@ function main() {
       "--test-concurrency=1",
       "tests/reset.dbtest.ts",
       "tests/owner-booking.dbtest.ts",
+      "tests/archive.dbtest.ts",
     ],
     { stdio: "inherit", env }
   );
