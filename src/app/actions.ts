@@ -662,9 +662,14 @@ export async function publishRichMenuAction(
   // 以前は「ご予約がある方向け」をお客様ごとに貼っていた。
   // 個別のメニューは既定より優先されるため、外さないかぎり
   // その方だけ古いメニューを見続けることになる。
-  const customers = await prisma.customer.findMany({ select: { lineUserId: true } });
-  if (customers.length > 0) {
-    await unlinkRichMenuFromUsers(customers.map((c) => c.lineUserId)).catch(() => {});
+  // LINEを使わないお客様（電話・紹介など）は対象外
+  const customers = await prisma.customer.findMany({
+    where: { lineUserId: { not: null } },
+    select: { lineUserId: true },
+  });
+  const lineUserIds = customers.map((c) => c.lineUserId).filter((v): v is string => Boolean(v));
+  if (lineUserIds.length > 0) {
+    await unlinkRichMenuFromUsers(lineUserIds).catch(() => {});
   }
 
   // 分けていた頃の残りを、LINE側と記録の両方から片づける。

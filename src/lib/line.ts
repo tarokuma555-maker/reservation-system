@@ -160,6 +160,20 @@ export async function pushMessage(params: {
 }) {
   const customer = await prisma.customer.findUniqueOrThrow({ where: { id: params.customerId } });
 
+  // 電話や紹介で登録したお客様はLINEを持たない。送る先が無いので記録だけ残す。
+  if (!customer.lineUserId) {
+    return prisma.outboundMessage.create({
+      data: {
+        customerId: customer.id,
+        reservationId: params.reservationId ?? null,
+        type: params.type,
+        payload: JSON.stringify({ messages: params.messages }, null, 2),
+        status: "skipped_no_line",
+        errorMessage: "LINEをお使いでないお客様のため、送っていません",
+      },
+    });
+  }
+
   const payload = { to: customer.lineUserId, messages: params.messages };
 
   const record = await prisma.outboundMessage.create({

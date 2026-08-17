@@ -188,7 +188,7 @@ export default async function LineLogPage() {
             <Field label="どのお客様">
               <select name="lineUserId" className={inputClass}>
                 {customers.map((c) => (
-                  <option key={c.id} value={c.lineUserId}>
+                  <option key={c.id} value={c.lineUserId ?? ""}>
                     {c.name}
                   </option>
                 ))}

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { Card, DeliveryBadge, SectionTitle } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { formatYen } from "@/lib/time";
+import { AddCustomerPanel, CustomerEditToggle } from "@/components/CustomerForm";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +21,12 @@ export default async function CustomersPage() {
       <header>
         <h1 className="text-2xl font-extrabold tracking-tighter text-ink">お客様</h1>
         <p className="mt-1 text-sm leading-relaxed text-slate-500">
-          いま {customers.length}名 のお客様がLINEでつながっています。
-          お名前・ご住所・これまでのご利用が一目で分かります。
+          いま {customers.length}名 のお客様が登録されています。
+          LINEから来られた方は自動で増えます。電話や紹介の方は、下から登録してください。
         </p>
       </header>
+
+      <AddCustomerPanel />
 
       <div className="space-y-4">
         {customers.map((c) => {
@@ -93,6 +96,37 @@ export default async function CustomersPage() {
                 </div>
               </div>
 
+              <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                <CustomerEditToggle
+                  values={{
+                    id: c.id,
+                    name: c.name,
+                    nameKana: c.nameKana,
+                    phone: c.phone,
+                    email: c.email ?? "",
+                    postalCode: c.postalCode ?? "",
+                    address: c.address ?? "",
+                    buildingName: c.buildingName ?? "",
+                    layout: c.layout ?? "",
+                    keyHandover: c.keyHandover ?? "",
+                    companyName: c.companyName ?? "",
+                    hasPet: c.hasPet,
+                    note: c.note,
+                  }}
+                />
+                {c.lineUserId ? (
+                  <span className="inline-flex items-center gap-1 text-2xs text-slate-500">
+                    <Icon name="chat" className="h-3.5 w-3.5 text-good-600" />
+                    LINEでつながっています
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-2xs text-slate-500">
+                    <Icon name="phone" className="h-3.5 w-3.5 text-slate-400" />
+                    LINEなし（お知らせは届きません）
+                  </span>
+                )}
+              </div>
+
               {c.reservations.length > 0 ? (
                 <div className="mt-3.5 border-t border-slate-100 pt-3">
                   <p className="mb-1.5 text-2xs font-bold tracking-wide text-slate-500">
@@ -119,14 +153,14 @@ export default async function CustomersPage() {
         })}
       </div>
 
-      <section>
-        <SectionTitle>これから足せること</SectionTitle>
-        <Card className="text-sm leading-relaxed text-slate-600">
-          いまは一覧とご利用の履歴までです。ご要望があれば、
-          <b>お客様ごとのメモ（作業の記録・お写真・次回への申し送り）</b>や、
-          お客様への個別のLINEメッセージも足せます。ご希望をお聞かせください。
-        </Card>
-      </section>
+      {customers.length === 0 ? (
+        <p className="rounded-card border border-slate-200 bg-surface px-6 py-10 text-center text-sm leading-relaxed text-slate-500">
+          まだお客様が登録されていません。
+          <br />
+          上の「お客様を新しく登録する」から、電話や紹介のお客様を入れられます。
+        </p>
+      ) : null}
+
     </div>
   );
 }

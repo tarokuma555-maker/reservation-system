@@ -57,10 +57,20 @@ function main() {
   const env = { ...process.env, DATABASE_URL: url.toString(), DIRECT_URL: url.toString() };
 
   execFileSync("npx", ["prisma", "migrate", "deploy"], { stdio: "inherit", env });
-  execFileSync("node", ["--import", "tsx", "--test", "tests/reset.dbtest.ts"], {
-    stdio: "inherit",
-    env,
-  });
+  // 全件削除を伴う確かめなので、**1本ずつ**走らせる。
+  // 同時に走らせると、片方の削除がもう片方の足元をすくう。
+  execFileSync(
+    "node",
+    [
+      "--import",
+      "tsx",
+      "--test",
+      "--test-concurrency=1",
+      "tests/reset.dbtest.ts",
+      "tests/owner-booking.dbtest.ts",
+    ],
+    { stdio: "inherit", env }
+  );
 
   psql("postgres", `DROP DATABASE IF EXISTS ${TEST_DB}`);
 }

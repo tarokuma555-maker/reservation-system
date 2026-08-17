@@ -70,7 +70,8 @@ model Staff {
 
 model Customer {
   id             String        @id @default(cuid())
-  lineUserId     String        @unique
+  /// LINEを使わないお客様（電話・紹介など）は空。空どうしは重複と見なされない
+  lineUserId     String?       @unique
   name           String
   /// LINEのプロフィール画像。友だち追加時にLINEから取得する
   pictureUrl     String?

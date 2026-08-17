@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getOwner } from "@/lib/session";
 import { createBlockedSlot } from "@/app/actions";
-import { Card, Field, SectionTitle, inputClass } from "@/components/ui";
+import { Card, Field, LinkButton, SectionTitle, inputClass } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import {
   addDays,
@@ -71,7 +71,11 @@ export default async function CalendarPage({
             予定を押すと、くわしい内容を見たり変更したりできます。
           </p>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <LinkButton href="/admin/reservations/new" size="sm" className="mr-2">
+            <Icon name="plus" className="h-3.5 w-3.5" />
+            ご予約を入れる
+          </LinkButton>
           <WeekButton href={`/admin/calendar?w=${weekOffset - 1}`}>
             <Icon name="arrowLeft" className="h-3.5 w-3.5" />
             前の週
